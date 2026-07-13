@@ -29,6 +29,13 @@ install:
 dev: install
     cd app && pnpm tauri dev
 
+# Frontend only, no Tauri backend: browse to http://<vm-ip>:1420 from another
+# machine. Hot reload included.
+#
+# Serve the UI on the LAN for browser preview.
+preview: install
+    cd app && pnpm dev --host
+
 # Run ON WINDOWS: bundling the installers needs Windows tooling. Artifacts land
 # in `target/release/` (exe) and `target/release/bundle/` (NSIS + MSI).
 #
