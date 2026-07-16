@@ -1,5 +1,7 @@
 export { DeviceHeader } from "./DeviceHeader";
 export type { DeviceHeaderProps } from "./DeviceHeader";
+export { FanCurveCard } from "./FanCurveCard";
+export type { FanCurveCardProps } from "./FanCurveCard";
 export { FanCurveChart } from "./fan-curve-chart/FanCurveChart";
 export type { FanCurveChartProps } from "./fan-curve-chart/FanCurveChart";
 export { StatCard } from "./StatCard";

@@ -1,0 +1,108 @@
+import { makeStyles, tokens } from "@fluentui/react-components";
+import type { ReactElement } from "react";
+import { TitleBar } from "../components/TitleBar";
+import { DeviceHeader } from "../components/DeviceHeader";
+import { ThemeToggle } from "../components/ThemeToggle";
+import { StatCard } from "../components/StatCard";
+import type { StatCardProps } from "../components/StatCard";
+import { FanCurveCard } from "../components/FanCurveCard";
+import type { CurvePointMoveHandler, CurveSeries } from "../components/types";
+
+const useStyles = makeStyles({
+  root: {
+    display: "flex",
+    flexDirection: "column",
+    height: "100vh",
+    backgroundColor: tokens.colorNeutralBackground2,
+  },
+  main: {
+    flexGrow: 1,
+    overflowY: "auto",
+    width: "100%",
+    maxWidth: "908px",
+    margin: "0 auto",
+    padding: "20px 24px 24px",
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+  },
+  headerRow: {
+    display: "flex",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: "16px",
+  },
+  statsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gap: "12px",
+  },
+});
+
+export interface AppLayoutProps {
+  /** Window title shown in the custom title bar. */
+  readonly title: string;
+  /** Category eyebrow, e.g. "Liquid cooler". */
+  readonly deviceLabel: string;
+  /** Product name, e.g. "MEG Core Liquid S280". */
+  readonly deviceName: string;
+  readonly isDark: boolean;
+  /** One readout card per cooling channel. */
+  readonly stats: readonly StatCardProps[];
+  readonly series: readonly CurveSeries[];
+  /** Whether edited curves differ from the applied ones. */
+  readonly dirty: boolean;
+  readonly tempMax?: number;
+  readonly showGrid?: boolean;
+  readonly showFill?: boolean;
+  readonly onToggleTheme: () => void;
+  readonly onPointMove?: CurvePointMoveHandler;
+  readonly onRevert: () => void;
+  readonly onApply: () => void;
+  readonly onDragStart: () => void;
+  readonly onMinimize: () => void;
+  readonly onClose: () => void;
+}
+
+/**
+ * The whole window: title bar, device header with theme toggle, channel
+ * stat cards, and the fan curve card. Purely presentational; every piece of
+ * state and behavior arrives through props.
+ *
+ * @returns The app layout.
+ */
+export function AppLayout(props: AppLayoutProps): ReactElement {
+  const styles = useStyles();
+  return (
+    <div className={styles.root}>
+      <TitleBar
+        title={props.title}
+        onDragStart={props.onDragStart}
+        onMinimize={props.onMinimize}
+        onClose={props.onClose}
+      />
+      <main className={styles.main}>
+        <div className={styles.headerRow}>
+          <DeviceHeader label={props.deviceLabel} name={props.deviceName} />
+          <ThemeToggle isDark={props.isDark} onToggle={props.onToggleTheme} />
+        </div>
+        <div className={styles.statsGrid}>
+          {props.stats.map((stat) => (
+            <StatCard key={stat.label} {...stat} />
+          ))}
+        </div>
+        <FanCurveCard
+          series={props.series}
+          dirty={props.dirty}
+          tempMax={props.tempMax}
+          showGrid={props.showGrid}
+          showFill={props.showFill}
+          onPointMove={props.onPointMove}
+          onRevert={props.onRevert}
+          onApply={props.onApply}
+        />
+      </main>
+    </div>
+  );
+}

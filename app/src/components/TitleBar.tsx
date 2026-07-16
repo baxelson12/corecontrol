@@ -1,5 +1,5 @@
 import { Caption1, makeStyles, tokens } from "@fluentui/react-components";
-import type { ReactElement } from "react";
+import type { MouseEvent, ReactElement } from "react";
 
 const useStyles = makeStyles({
   root: {
@@ -49,33 +49,36 @@ const useStyles = makeStyles({
 export interface TitleBarProps {
   /** Window title, e.g. "AIO Cooler Control". */
   readonly title: string;
+  /** Called on a primary-button press outside the caption buttons. */
+  readonly onDragStart: () => void;
   readonly onMinimize: () => void;
-  readonly onMaximize: () => void;
   readonly onClose: () => void;
 }
 
 /**
  * Custom window title bar: accent app mark, title, and Windows-style
- * minimize, maximize, and close buttons. Window dragging and the actual
- * window commands are wired up by the caller.
+ * minimize and close buttons. The actual window commands are wired up by
+ * the caller.
  *
  * @returns The title bar.
  */
-export function TitleBar({ title, onMinimize, onMaximize, onClose }: TitleBarProps): ReactElement {
+export function TitleBar({ title, onDragStart, onMinimize, onClose }: TitleBarProps): ReactElement {
   const styles = useStyles();
+
+  function handleMouseDown(event: MouseEvent<HTMLElement>): void {
+    if (event.button !== 0) return;
+    if ((event.target as HTMLElement).closest("button")) return;
+    onDragStart();
+  }
+
   return (
-    <header className={styles.root}>
+    <header className={styles.root} onMouseDown={handleMouseDown}>
       <span className={styles.appMark} />
       <Caption1 className={styles.title}>{title}</Caption1>
       <div className={styles.buttons}>
         <button type="button" className={styles.captionButton} aria-label="Minimize" onClick={onMinimize}>
           <svg width="10" height="10" viewBox="0 0 10 10">
             <line x1="0" y1="5" x2="10" y2="5" stroke="currentColor" />
-          </svg>
-        </button>
-        <button type="button" className={styles.captionButton} aria-label="Maximize" onClick={onMaximize}>
-          <svg width="10" height="10" viewBox="0 0 10 10">
-            <rect x="0.5" y="0.5" width="9" height="9" rx="1.5" fill="none" stroke="currentColor" />
           </svg>
         </button>
         <button

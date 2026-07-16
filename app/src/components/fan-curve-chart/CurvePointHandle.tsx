@@ -60,7 +60,7 @@ export function CurvePointHandle({ point, color, tempMax, onMove }: CurvePointHa
       cx={tempToX(clamp(point.temp, 0, tempMax), tempMax)}
       cy={dutyToY(clamp(point.duty, 0, DUTY_MAX))}
       r={6}
-      fill={tokens.colorNeutralBackground2}
+      fill={tokens.colorNeutralBackground1}
       stroke={color}
       strokeWidth={2}
       onPointerDown={handlePointerDown}

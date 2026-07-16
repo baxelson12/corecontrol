@@ -1,77 +1,43 @@
 import { useState } from "react";
-import {
-  Button,
-  Field,
-  Input,
-  Text,
-  Title1,
-  makeStyles,
-  tokens,
-} from "@fluentui/react-components";
-import { invoke } from "@tauri-apps/api/core";
+import type { ReactElement } from "react";
+import { FluentProvider, webDarkTheme, webLightTheme } from "@fluentui/react-components";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { AppLayout } from "./layout/AppLayout";
+import { MOCK_SERIES, MOCK_STATS, movePoint } from "./mock";
 
-/** Shape of the reply returned by the Rust `ping` command. */
-type Pong = { message: string; echoed: string };
-
-const useStyles = makeStyles({
-  root: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "16px",
-    maxWidth: "420px",
-    margin: "0 auto",
-    padding: "48px 24px",
-  },
-  reply: {
-    padding: "12px 16px",
-    borderRadius: tokens.borderRadiusMedium,
-    backgroundColor: tokens.colorNeutralBackground2,
-  },
-  error: {
-    color: tokens.colorPaletteRedForeground1,
-  },
-});
+const appWindow = getCurrentWindow();
 
 /**
- * Root view. Sends a name to the Rust `ping` command and shows the reply,
- * proving the Tauri IPC bridge and Fluent UI render path both work.
+ * Root view: the app layout running on mock data so the design can be
+ * previewed. Real device state and IPC replace this container later.
  *
- * @returns The scaffold check screen.
+ * @returns The themed app.
  */
-function App() {
-  const styles = useStyles();
-  const [name, setName] = useState("cooler");
-  const [reply, setReply] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  /**
-   * Invokes the backend `ping` command with the current name, storing either
-   * the greeting or a surfaced error for display.
-   */
-  async function onPing(): Promise<void> {
-    setError(null);
-    try {
-      const pong = await invoke<Pong>("ping", { name });
-      setReply(pong.message);
-    } catch (err) {
-      setReply(null);
-      setError(typeof err === "string" ? err : "Unexpected error");
-    }
-  }
+function App(): ReactElement {
+  const [isDark, setIsDark] = useState(true);
+  const [series, setSeries] = useState(MOCK_SERIES);
+  const [applied, setApplied] = useState(MOCK_SERIES);
+  const dirty = JSON.stringify(series) !== JSON.stringify(applied);
 
   return (
-    <main className={styles.root}>
-      <Title1>CoreLiquid</Title1>
-      <Text>Scaffold check — call the Rust backend over Tauri IPC.</Text>
-      <Field label="Name">
-        <Input value={name} onChange={(_, data) => setName(data.value)} />
-      </Field>
-      <Button appearance="primary" onClick={() => void onPing()}>
-        Ping backend
-      </Button>
-      {reply && <Text className={styles.reply}>{reply}</Text>}
-      {error && <Text className={styles.error}>{error}</Text>}
-    </main>
+    <FluentProvider theme={isDark ? webDarkTheme : webLightTheme}>
+      <AppLayout
+        title="AIO Cooler Control"
+        deviceLabel="Liquid cooler"
+        deviceName="MEG Core Liquid S280"
+        isDark={isDark}
+        stats={MOCK_STATS}
+        series={series}
+        dirty={dirty}
+        onToggleTheme={() => setIsDark((d) => !d)}
+        onPointMove={(si, pi, pt) => setSeries((s) => movePoint(s, si, pi, pt))}
+        onRevert={() => setSeries(applied)}
+        onApply={() => setApplied(series)}
+        onDragStart={() => appWindow.startDragging().catch(console.error)}
+        onMinimize={() => appWindow.minimize().catch(console.error)}
+        onClose={() => appWindow.close().catch(console.error)}
+      />
+    </FluentProvider>
   );
 }
 

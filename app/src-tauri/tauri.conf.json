@@ -13,8 +13,10 @@
     "windows": [
       {
         "title": "CoreLiquid",
-        "width": 800,
-        "height": 600
+        "decorations": false,
+        "resizable": false,
+        "width": 880,
+        "height": 720
       }
     ],
     "security": {
