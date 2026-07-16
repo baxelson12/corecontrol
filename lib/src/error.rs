@@ -9,6 +9,8 @@ pub enum ControllerError {
     Hid(hidapi::HidError),
     /// A reply arrived but carried an unexpected command byte.
     UnexpectedResponse(u8),
+    /// A fan curve was rejected during validation, with the reason.
+    InvalidCurve(&'static str),
     /// A status reply carried a reading outside plausible bounds, suggesting
     /// a corrupt or misaligned reply.
     ImplausibleReading(u16),
@@ -33,6 +35,9 @@ impl std::fmt::Display for ControllerError {
             ControllerError::Hid(error) => write!(f, "HID transport failed: {error}"),
             ControllerError::UnexpectedResponse(command) => {
                 write!(f, "reply carried unexpected command byte {command:#04x}")
+            }
+            ControllerError::InvalidCurve(reason) => {
+                write!(f, "invalid fan curve: {reason}")
             }
             ControllerError::ImplausibleReading(value) => {
                 write!(f, "status reading {value} is outside plausible bounds")

@@ -2,13 +2,15 @@
 //!
 //! The backend is a thin IPC layer over the `coreliquid` control library.
 //! [`detect_cooler`] runs the startup detection scan and opens the first
-//! recognized cooler; [`fan_status`] reads its live speeds and duties. The
-//! open device lives in Tauri-managed state shared by the commands.
+//! recognized cooler; [`fan_status`] reads its live speeds and duties;
+//! [`read_fan_profile`] and [`apply_fan_profile`] read and write the fan
+//! curve profile. The open device lives in Tauri-managed state shared by the
+//! commands.
 
 use std::sync::{Arc, Mutex};
 
-use coreliquid::{Cooler, FanStatus};
-use serde::Serialize;
+use coreliquid::{ChannelCurve, Cooler, FanConfig, FanStatus};
+use serde::{Deserialize, Serialize};
 
 /// The open cooler shared between IPC commands. `None` until detection has
 /// found and opened a device. The mutex also serializes HID access.
@@ -42,6 +44,76 @@ pub struct FanReadings {
     pub pump_rpm: u16,
     /// Duty of the pump channel, in percent (0–100).
     pub pump_duty: u8,
+}
+
+/// One control point of a fan curve, as exchanged with the UI.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct CurvePointDto {
+    /// Coolant temperature in degrees Celsius (1–120).
+    pub temp: u8,
+    /// Fan or pump duty in percent (0–100).
+    pub duty: u8,
+}
+
+/// A full fan profile shaped for the UI: one curve of 4–7 points per display
+/// channel.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FanProfile {
+    /// Curve applied uniformly to the radiator fan channels.
+    pub radiators: Vec<CurvePointDto>,
+    /// Curve for the waterblock (60 mm) fan channel.
+    pub waterblock: Vec<CurvePointDto>,
+    /// Curve for the pump channel.
+    pub pump: Vec<CurvePointDto>,
+}
+
+/// Extracts one channel's populated points for the UI.
+fn curve_points(curve: &ChannelCurve) -> Vec<CurvePointDto> {
+    curve
+        .points()
+        .iter()
+        .take(curve.point_count())
+        .map(|&(temp, duty)| CurvePointDto { temp, duty })
+        .collect()
+}
+
+impl From<&FanConfig> for FanProfile {
+    fn from(config: &FanConfig) -> Self {
+        FanProfile {
+            radiators: curve_points(&config.radiators()),
+            waterblock: curve_points(&config.waterblock()),
+            pump: curve_points(&config.pump()),
+        }
+    }
+}
+
+/// Validates one channel's points from the UI into a `ChannelCurve`.
+///
+/// # Errors
+/// Returns `Err` with a message when the points do not form a legal curve.
+fn parse_curve(points: &[CurvePointDto]) -> Result<ChannelCurve, String> {
+    let pairs: Vec<(u8, u8)> = points
+        .iter()
+        .map(|point| (point.temp, point.duty))
+        .collect();
+
+    ChannelCurve::try_from_points(&pairs).map_err(|error| error.to_string())
+}
+
+/// Validates a UI profile into the configuration the device accepts.
+///
+/// # Errors
+/// Returns `Err` with a message naming the first channel whose points do not
+/// form a legal curve.
+fn config_from_profile(profile: &FanProfile) -> Result<FanConfig, String> {
+    let mut config = FanConfig::new();
+    config.set_radiators(parse_curve(&profile.radiators).map_err(|e| format!("radiators: {e}"))?);
+    config
+        .set_waterblock(parse_curve(&profile.waterblock).map_err(|e| format!("waterblock: {e}"))?);
+    config.set_pump(parse_curve(&profile.pump).map_err(|e| format!("pump: {e}"))?);
+
+    Ok(config)
 }
 
 impl From<FanStatus> for FanReadings {
@@ -94,10 +166,52 @@ fn read_fan_status(handle: &Mutex<Option<Cooler>>) -> Result<FanReadings, String
     let slot = handle
         .lock()
         .map_err(|_| "cooler state mutex poisoned".to_owned())?;
-    let cooler = slot.as_ref().ok_or_else(|| "no cooler is open".to_owned())?;
+    let cooler = slot
+        .as_ref()
+        .ok_or_else(|| "no cooler is open".to_owned())?;
     let status = cooler.status().map_err(|error| error.to_string())?;
 
     Ok(FanReadings::from(status))
+}
+
+/// Reads the profile the cooler stored in `handle` is currently running.
+///
+/// # Returns
+/// The running profile, or `None` when the device is not running a custom
+/// curve on every channel.
+///
+/// # Errors
+/// Returns `Err` with a message when no cooler is open, the state mutex is
+/// poisoned, or the device exchange fails.
+fn read_profile(handle: &Mutex<Option<Cooler>>) -> Result<Option<FanProfile>, String> {
+    let mut slot = handle
+        .lock()
+        .map_err(|_| "cooler state mutex poisoned".to_owned())?;
+    let cooler = slot
+        .as_mut()
+        .ok_or_else(|| "no cooler is open".to_owned())?;
+    let profile = cooler.read_profile().map_err(|error| error.to_string())?;
+
+    Ok(profile.as_ref().map(FanProfile::from))
+}
+
+/// Validates `profile` and writes it to the cooler stored in `handle`.
+///
+/// # Errors
+/// Returns `Err` with a message when the profile is not a legal curve set,
+/// no cooler is open, the state mutex is poisoned, or the write fails.
+fn write_profile(handle: &Mutex<Option<Cooler>>, profile: &FanProfile) -> Result<(), String> {
+    let config = config_from_profile(profile)?;
+    let mut slot = handle
+        .lock()
+        .map_err(|_| "cooler state mutex poisoned".to_owned())?;
+    let cooler = slot
+        .as_mut()
+        .ok_or_else(|| "no cooler is open".to_owned())?;
+
+    cooler
+        .apply_config(&config)
+        .map_err(|error| error.to_string())
 }
 
 /// IPC command: scans the HID bus for supported coolers and opens the first
@@ -139,6 +253,44 @@ async fn fan_status(state: tauri::State<'_, CoolerHandle>) -> Result<FanReadings
         .map_err(|error| error.to_string())?
 }
 
+/// IPC command: reads the fan curve profile the cooler is currently running,
+/// or `None` when no custom curve is applied.
+///
+/// Runs the HID exchange on a blocking thread so the IPC runtime is never
+/// stalled by the device.
+///
+/// # Errors
+/// Returns `Err` with a message when no cooler is open or the read fails.
+#[tauri::command]
+async fn read_fan_profile(
+    state: tauri::State<'_, CoolerHandle>,
+) -> Result<Option<FanProfile>, String> {
+    let handle = state.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || read_profile(&handle.0))
+        .await
+        .map_err(|error| error.to_string())?
+}
+
+/// IPC command: validates a fan curve profile from the UI and applies it to
+/// the cooler.
+///
+/// Runs the HID exchange on a blocking thread so the IPC runtime is never
+/// stalled by the device.
+///
+/// # Errors
+/// Returns `Err` with a message when the profile is invalid, no cooler is
+/// open, or the write fails.
+#[tauri::command]
+async fn apply_fan_profile(
+    state: tauri::State<'_, CoolerHandle>,
+    profile: FanProfile,
+) -> Result<(), String> {
+    let handle = state.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || write_profile(&handle.0, &profile))
+        .await
+        .map_err(|error| error.to_string())?
+}
+
 /// Builds and runs the Tauri application, registering the IPC handlers.
 ///
 /// # Panics
@@ -147,7 +299,12 @@ async fn fan_status(state: tauri::State<'_, CoolerHandle>) -> Result<FanReadings
 pub fn run() {
     tauri::Builder::default()
         .manage(CoolerHandle(Arc::new(Mutex::new(None))))
-        .invoke_handler(tauri::generate_handler![detect_cooler, fan_status])
+        .invoke_handler(tauri::generate_handler![
+            detect_cooler,
+            fan_status,
+            read_fan_profile,
+            apply_fan_profile
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

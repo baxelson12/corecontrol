@@ -6,7 +6,7 @@ import { ThemeToggle } from "../components/ThemeToggle";
 import { StatCard } from "../components/StatCard";
 import type { StatCardProps } from "../components/StatCard";
 import { FanCurveCard } from "../components/FanCurveCard";
-import type { CurvePointMoveHandler, CurveSeries, ThemeName } from "../components/types";
+import type { CurvePointMoveHandler, CurveSeries, CurveSource, ThemeName } from "../components/types";
 
 const useStyles = makeStyles({
   root: {
@@ -53,6 +53,8 @@ export interface AppLayoutProps {
   readonly series: readonly CurveSeries[];
   /** Whether edited curves differ from the applied ones. */
   readonly dirty: boolean;
+  /** Where the shown curves came from (device profile or defaults). */
+  readonly curveSource: CurveSource;
   readonly tempMax?: number | undefined;
   readonly showGrid?: boolean | undefined;
   readonly showFill?: boolean | undefined;
@@ -95,6 +97,7 @@ export function AppLayout(props: AppLayoutProps): ReactElement {
         <FanCurveCard
           series={props.series}
           dirty={props.dirty}
+          source={props.curveSource}
           tempMax={props.tempMax}
           showGrid={props.showGrid}
           showFill={props.showFill}

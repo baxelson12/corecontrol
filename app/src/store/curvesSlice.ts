@@ -1,7 +1,10 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import type { CurvePoint, CurveSeries } from "../components/types";
-import { MOCK_SERIES } from "../mock";
+import { match } from "ts-pattern";
+import type { CurvePoint, CurveSeries, CurveSource } from "../components/types";
+import { DEFAULT_SERIES } from "../defaults";
+import { applyFanProfile, profileToSeries, readFanProfile, seriesToProfile } from "../utils/profile";
+import type { ProfileRead } from "../utils/profile";
 
 const SNAP = 5;
 const TEMP_MAX = 120;
@@ -10,8 +13,11 @@ const DUTY_MAX = 100;
 interface CurvesState {
   /** Curves as currently edited on the chart. */
   readonly edited: readonly CurveSeries[];
-  /** Curves last applied to the device. */
+  /** Curves last confirmed on the device. */
   readonly applied: readonly CurveSeries[];
+  /** Whether `applied` was read from (or written to) the device, or is the
+   * design fallback shown while no custom profile is running. */
+  readonly source: CurveSource;
 }
 
 /** Identifies one dragged point and its new chart-domain position. */
@@ -21,7 +27,29 @@ export interface PointMove {
   readonly point: CurvePoint;
 }
 
-const initialState: CurvesState = { edited: MOCK_SERIES, applied: MOCK_SERIES };
+/**
+ * Loads the profile the device is currently running. `readFanProfile` folds
+ * its own failures into the outcome union, so this thunk always fulfills.
+ */
+export const profileLoadStarted = createAsyncThunk("curves/load", readFanProfile);
+
+/**
+ * Writes the given curves to the device. Fulfills with whether the device
+ * accepted them; the reducer only commits the curves as applied on success.
+ */
+export const curvesApplied = createAsyncThunk(
+  "curves/apply",
+  async (series: readonly CurveSeries[]): Promise<boolean> => {
+    const profile = seriesToProfile(series);
+    return profile === null ? false : applyFanProfile(profile);
+  },
+);
+
+const initialState: CurvesState = {
+  edited: DEFAULT_SERIES,
+  applied: DEFAULT_SERIES,
+  source: "defaults",
+};
 
 /**
  * Returns a copy of `series` with one point moved: snapped to 5° / 5% steps
@@ -65,16 +93,30 @@ const curvesSlice = createSlice({
     reverted(state) {
       state.edited = state.applied;
     },
-    /** Marks the edited curves as applied to the device. */
-    applied(state) {
-      state.applied = state.edited;
-    },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(profileLoadStarted.fulfilled, (_state, action): CurvesState =>
+      match<ProfileRead, CurvesState>(action.payload)
+        .with({ state: "running" }, ({ profile }) => {
+          const series = profileToSeries(profile);
+          return { edited: series, applied: series, source: "device" };
+        })
+        .otherwise(() => initialState),
+    );
+    builder.addCase(curvesApplied.fulfilled, (state, action): CurvesState => {
+      if (!action.payload) return state;
+      return { edited: state.edited, applied: action.meta.arg, source: "device" };
+    });
   },
 });
 
-/** Whether the edited curves differ from the applied ones. */
+/**
+ * Whether the chart shows state the device is not running: edits differing
+ * from the applied curves, or fallback defaults never written to the device.
+ */
 export function selectCurvesDirty(state: { readonly curves: CurvesState }): boolean {
-  const { edited, applied } = state.curves;
+  const { edited, applied, source } = state.curves;
+  if (source === "defaults") return true;
   if (edited.length !== applied.length) return true;
   return !edited.every((s, i) => {
     const t = applied[i];
@@ -82,9 +124,5 @@ export function selectCurvesDirty(state: { readonly curves: CurvesState }): bool
   });
 }
 
-export const {
-  pointMoved: curvePointMoved,
-  reverted: curvesReverted,
-  applied: curvesApplied,
-} = curvesSlice.actions;
+export const { pointMoved: curvePointMoved, reverted: curvesReverted } = curvesSlice.actions;
 export const curvesReducer = curvesSlice.reducer;

@@ -3,7 +3,10 @@
 //! [`Cooler`] is the single entry point: scan for attached models with
 //! [`Cooler::scan`], open one with [`Cooler::open`] (or both at once with
 //! [`Cooler::detect`]), then apply or read profiles through the instance.
-//! The remaining exports are the data types those calls exchange.
+//! [`Cooler::read_profile`] recovers the profile the device is already
+//! running, so an application can display it at startup without stored
+//! state; `None` means no custom curve is applied. The remaining exports are
+//! the data types those calls exchange.
 //!
 //! Internally, shared behavior and per-model data are separated:
 //!

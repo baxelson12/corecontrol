@@ -131,41 +131,67 @@ pub struct ChannelCurve {
 impl ChannelCurve {
     /// Builds a curve from `MIN_CURVE_POINTS`..=`MAX_CURVE_POINTS` points, each
     /// a (temperature C, duty %) pair. Temperatures must be non-zero and
-    /// strictly increasing; a leading 0 C point is treated as an empty curve.
+    /// strictly increasing. For input that crosses a trust boundary use
+    /// [`ChannelCurve::try_from_points`] instead.
+    ///
+    /// # Panics
+    /// Panics when [`ChannelCurve::try_from_points`] would reject the points.
     pub fn from_points(points: &[(u8, u8)]) -> ChannelCurve {
-        assert!(
-            points.len() >= MIN_CURVE_POINTS,
-            "curve needs at least four points"
-        );
-        assert!(
-            points.len() <= MAX_CURVE_POINTS,
-            "curve accepts at most seven points"
-        );
-        assert!(points[0].0 != 0, "first curve point must start above 0 C");
-        assert!(
-            points
-                .iter()
-                .all(|&(t, d)| t <= TEMP_CEILING && d <= MAX_DUTY),
-            "curve point out of range"
-        );
-        assert!(
-            points.windows(2).all(|pair| pair[1].0 > pair[0].0),
-            "curve temperatures must strictly increase"
-        );
+        match ChannelCurve::try_from_points(points) {
+            Ok(curve) => curve,
+            Err(error) => panic!("{error}"),
+        }
+    }
+
+    /// Builds a curve from (temperature C, duty %) pairs, validating instead
+    /// of panicking. This is the constructor for points arriving from outside
+    /// the process (IPC payloads, config files).
+    ///
+    /// # Errors
+    /// Returns `ControllerError::InvalidCurve` when the slice carries fewer
+    /// than `MIN_CURVE_POINTS` or more than `MAX_CURVE_POINTS` points, a
+    /// temperature is zero or implausibly high, a duty exceeds 100 %, or the
+    /// temperatures do not strictly increase.
+    pub fn try_from_points(points: &[(u8, u8)]) -> Result<ChannelCurve, ControllerError> {
+        if points.len() < MIN_CURVE_POINTS {
+            return Err(ControllerError::InvalidCurve("fewer than four points"));
+        }
+        if points.len() > MAX_CURVE_POINTS {
+            return Err(ControllerError::InvalidCurve("more than seven points"));
+        }
+        if points
+            .iter()
+            .any(|&(temp, _)| temp == 0 || temp > TEMP_CEILING)
+        {
+            return Err(ControllerError::InvalidCurve("temperature must be 1-120 C"));
+        }
+        if points.iter().any(|&(_, duty)| duty > MAX_DUTY) {
+            return Err(ControllerError::InvalidCurve("duty must be 0-100 %"));
+        }
+        if !points.windows(2).all(|pair| pair[1].0 > pair[0].0) {
+            return Err(ControllerError::InvalidCurve(
+                "temperatures must strictly increase",
+            ));
+        }
         let mut temps = [0u8; MAX_CURVE_POINTS];
         let mut duties = [0u8; MAX_CURVE_POINTS];
-        let mut index = 0;
-        while index < points.len() {
-            temps[index] = points[index].0;
-            duties[index] = points[index].1;
-            index += 1;
+        for (index, &(temp, duty)) in points.iter().enumerate() {
+            temps[index] = temp;
+            duties[index] = duty;
         }
 
-        ChannelCurve {
+        Ok(ChannelCurve {
             mode: CURVE_MODE,
             temps,
             duties,
-        }
+        })
+    }
+
+    /// Number of populated points: the length of the leading run of non-zero
+    /// temperatures. Entries beyond it in [`ChannelCurve::points`] are
+    /// padding.
+    pub fn point_count(&self) -> usize {
+        self.temps.iter().take_while(|&&temp| temp != 0).count()
     }
 
     /// Returns the curve as `MAX_CURVE_POINTS` (temperature C, duty %) pairs,
@@ -356,6 +382,61 @@ fn status_duty(report: &[u8; REPORT_LEN], channel: usize) -> Result<u8, Controll
     }
 
     u8::try_from(value).map_err(|_| ControllerError::ImplausibleReading(value))
+}
+
+/// Extracts one channel's curve from a duty/temperature reply pair, or
+/// `None` when the slot does not carry a well-formed custom curve (a
+/// different mode byte, too few points, or out-of-range values).
+fn parse_curve_slot(
+    duty_report: &[u8; REPORT_LEN],
+    temp_report: &[u8; REPORT_LEN],
+    channel: usize,
+) -> Option<ChannelCurve> {
+    assert!(channel < CHANNEL_COUNT, "channel outside the report");
+    let slot = FIRST_SLOT_OFFSET + channel * SLOT_STRIDE;
+    if duty_report[slot] != CURVE_MODE || temp_report[slot] != CURVE_MODE {
+        return None;
+    }
+    let temps = &temp_report[slot + 1..slot + 1 + MAX_CURVE_POINTS];
+    let duties = &duty_report[slot + 1..slot + 1 + MAX_CURVE_POINTS];
+    let mut pairs = [(0u8, 0u8); MAX_CURVE_POINTS];
+    for (pair, (&temp, &duty)) in pairs.iter_mut().zip(temps.iter().zip(duties)) {
+        *pair = (temp, duty);
+    }
+    let count = pairs.iter().take_while(|&&(temp, _)| temp != 0).count();
+
+    ChannelCurve::try_from_points(pairs.get(..count)?).ok()
+}
+
+/// Parses a duty-configuration reply (`0x32`) and a temperature reply
+/// (`0x33`) into the profile the device is running. Returns `None` when any
+/// channel slot is not a well-formed custom curve, meaning the device is in
+/// another mode or has no profile applied. The slot layout mirrors the set
+/// reports and matches liquidctl's driver for the same family.
+pub(crate) fn parse_profile(
+    duty_report: &[u8; REPORT_LEN],
+    temp_report: &[u8; REPORT_LEN],
+) -> Result<Option<FanConfig>, ControllerError> {
+    if duty_report[1] != CMD_GET_DUTY {
+        return Err(ControllerError::UnexpectedResponse(duty_report[1]));
+    }
+    // The S280 echoes 0x32 in the temperature reply as well, so both config
+    // echoes are accepted; the request order pairs the replies.
+    if temp_report[1] != CMD_GET_TEMP && temp_report[1] != CMD_GET_DUTY {
+        return Err(ControllerError::UnexpectedResponse(temp_report[1]));
+    }
+    let Some(first) = parse_curve_slot(duty_report, temp_report, 0) else {
+        return Ok(None);
+    };
+    let mut channels = [first; CHANNEL_COUNT];
+    for (channel, slot) in channels.iter_mut().enumerate().skip(1) {
+        let Some(curve) = parse_curve_slot(duty_report, temp_report, channel) else {
+            return Ok(None);
+        };
+        *slot = curve;
+    }
+
+    Ok(Some(FanConfig { channels }))
 }
 
 /// Parses a status reply into speeds and duties for the mapped channels. The

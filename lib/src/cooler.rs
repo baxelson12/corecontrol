@@ -6,7 +6,7 @@ use crate::error::ControllerError;
 use crate::models::{ModelSpec, VENDOR_ID, available_devices};
 use crate::protocol::{
     CMD_GET_DUTY, CMD_GET_TEMP, CMD_PUSH_CPU, CMD_STATUS, FanConfig, FanStatus, REPORT_LEN,
-    TEMP_CEILING, WRITE_PREFIX, build_command, parse_status,
+    TEMP_CEILING, WRITE_PREFIX, build_command, parse_profile, parse_status,
 };
 
 /// HID report id of the feature report read during the connect handshake.
@@ -151,8 +151,8 @@ impl Cooler {
         Ok(())
     }
 
-    /// Sends a read-request command and consumes the 64-byte reply.
-    fn read_config(&self, command: u8) -> Result<(), ControllerError> {
+    /// Sends a read-request command and returns the 64-byte reply.
+    fn read_config(&self, command: u8) -> Result<[u8; REPORT_LEN], ControllerError> {
         assert!(
             command == CMD_GET_DUTY || command == CMD_GET_TEMP,
             "not a config-read command: {command:#x}"
@@ -166,7 +166,48 @@ impl Cooler {
             return Err(ControllerError::ShortRead(read));
         }
 
-        Ok(())
+        Ok(reply)
+    }
+
+    /// Reads the raw duty (`0x32`) and temperature (`0x33`) configuration
+    /// replies and formats them as hex, one report per line. A protocol
+    /// diagnostic for checking the read-back layout on real hardware; the
+    /// same bytes are what [`Cooler::read_profile`] parses.
+    ///
+    /// # Errors
+    /// Returns `ControllerError::Hid` on transport failure and `ShortRead`
+    /// on a truncated reply.
+    pub fn dump_config_replies(&self) -> Result<String, ControllerError> {
+        let duty = self.read_config(CMD_GET_DUTY)?;
+        let temp = self.read_config(CMD_GET_TEMP)?;
+
+        Ok(format!(
+            "duty (0x32): {duty:02x?}\ntemp (0x33): {temp:02x?}"
+        ))
+    }
+
+    /// Reads the profile the device is currently running by requesting its
+    /// duty and temperature configuration and parsing the pair. On success
+    /// the profile also becomes [`Cooler::current_profile`].
+    ///
+    /// # Returns
+    /// The running configuration, or `None` when the device is not running a
+    /// custom-curve profile on every channel (another mode is active, or no
+    /// profile has ever been applied).
+    ///
+    /// # Errors
+    /// Returns `ControllerError::Hid` on transport failure, `ShortRead` on a
+    /// truncated reply, and `UnexpectedResponse` when a reply is not the
+    /// requested configuration report.
+    pub fn read_profile(&mut self) -> Result<Option<FanConfig>, ControllerError> {
+        let duty_reply = self.read_config(CMD_GET_DUTY)?;
+        let temp_reply = self.read_config(CMD_GET_TEMP)?;
+        let profile = parse_profile(&duty_reply, &temp_reply)?;
+        if let Some(config) = &profile {
+            self.current = Some(config.clone());
+        }
+
+        Ok(profile)
     }
 
     /// Writes one fully-formed report to the device, verifying the transfer.

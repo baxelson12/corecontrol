@@ -8,7 +8,13 @@ import { deviceName } from "./utils/detection";
 import { useAppDispatch, useAppSelector } from "./store/hooks";
 import { themeToggled } from "./store/themeSlice";
 import { coolerScanStarted } from "./store/detectionSlice";
-import { curvePointMoved, curvesApplied, curvesReverted, selectCurvesDirty } from "./store/curvesSlice";
+import {
+  curvePointMoved,
+  curvesApplied,
+  curvesReverted,
+  profileLoadStarted,
+  selectCurvesDirty,
+} from "./store/curvesSlice";
 import { fanStatusPolled, selectFanStats } from "./store/statusSlice";
 
 const appWindow = getCurrentWindow();
@@ -17,9 +23,9 @@ const appWindow = getCurrentWindow();
 const STATUS_POLL_MS = 1000;
 
 /**
- * Root view: kicks off cooler detection on startup, polls the cooler for
- * live status once detected, and binds the store to the presentational
- * layout.
+ * Root view: kicks off cooler detection on startup, then loads the fan
+ * profile the device is running and polls it for live status, binding the
+ * store to the presentational layout.
  *
  * @returns The themed app.
  */
@@ -28,6 +34,7 @@ function App(): ReactElement {
   const theme = useAppSelector((state) => state.theme.name);
   const detection = useAppSelector((state) => state.detection);
   const series = useAppSelector((state) => state.curves.edited);
+  const curveSource = useAppSelector((state) => state.curves.source);
   const dirty = useAppSelector(selectCurvesDirty);
   const stats = useAppSelector(selectFanStats);
   const coolerFound = detection.state === "found";
@@ -40,6 +47,7 @@ function App(): ReactElement {
     if (!coolerFound) {
       return undefined;
     }
+    void dispatch(profileLoadStarted());
     void dispatch(fanStatusPolled());
     const timer = setInterval(() => void dispatch(fanStatusPolled()), STATUS_POLL_MS);
     return () => clearInterval(timer);
@@ -59,13 +67,14 @@ function App(): ReactElement {
         theme={theme}
         stats={stats}
         series={series}
-        dirty={dirty}
+        dirty={dirty && coolerFound}
+        curveSource={curveSource}
         onToggleTheme={() => dispatch(themeToggled())}
         onPointMove={(seriesIndex, pointIndex, point) =>
           dispatch(curvePointMoved({ seriesIndex, pointIndex, point }))
         }
         onRevert={() => dispatch(curvesReverted())}
-        onApply={() => dispatch(curvesApplied())}
+        onApply={() => void dispatch(curvesApplied(series))}
         onDragStart={() => appWindow.startDragging().catch(console.error)}
         onMinimize={() => appWindow.minimize().catch(console.error)}
         onClose={() => appWindow.close().catch(console.error)}

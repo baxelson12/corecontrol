@@ -15,8 +15,10 @@ justfile          workspace tasks
 ```
 
 The app consumes the library through the `Cooler` facade. Startup device
-detection (`detect_cooler`) and live status polling (`fan_status`, speeds and
-duties for the stat cards) are wired end to end; profile commands come next.
+detection (`detect_cooler`), live status polling (`fan_status`, speeds and
+duties for the stat cards), and the fan curve profile (`read_fan_profile` for
+the curve the device is running, `apply_fan_profile` to write an edited one)
+are wired end to end.
 
 ## Prerequisites
 

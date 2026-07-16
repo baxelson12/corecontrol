@@ -17,6 +17,13 @@ export interface CurveSeries {
 /** Reports a chart point being dragged to a new chart-domain position. */
 export type CurvePointMoveHandler = (seriesIndex: number, pointIndex: number, point: CurvePoint) => void;
 
+/**
+ * Where the curves on the chart came from: read from (or written to) the
+ * device, or the design-fallback defaults shown while the device is not
+ * running a custom profile.
+ */
+export type CurveSource = "device" | "defaults";
+
 /** The two UI color themes. */
 export type ThemeName = "light" | "dark";
 
