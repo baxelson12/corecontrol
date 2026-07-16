@@ -9,6 +9,9 @@ pub enum ControllerError {
     Hid(hidapi::HidError),
     /// A reply arrived but carried an unexpected command byte.
     UnexpectedResponse(u8),
+    /// A status reply carried a reading outside plausible bounds, suggesting
+    /// a corrupt or misaligned reply.
+    ImplausibleReading(u16),
     /// A write transferred no bytes.
     ShortWrite(usize),
     /// A read returned fewer bytes than a full report.
@@ -30,6 +33,9 @@ impl std::fmt::Display for ControllerError {
             ControllerError::Hid(error) => write!(f, "HID transport failed: {error}"),
             ControllerError::UnexpectedResponse(command) => {
                 write!(f, "reply carried unexpected command byte {command:#04x}")
+            }
+            ControllerError::ImplausibleReading(value) => {
+                write!(f, "status reading {value} is outside plausible bounds")
             }
             ControllerError::ShortWrite(written) => {
                 write!(f, "write transferred only {written} bytes")

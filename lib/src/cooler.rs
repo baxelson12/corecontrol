@@ -181,7 +181,13 @@ impl Cooler {
         Ok(())
     }
 
-    /// Requests and parses a status report from the device.
+    /// Requests and parses a status report: the current speed and duty cycle
+    /// of every mapped channel.
+    ///
+    /// # Errors
+    /// Returns `ControllerError::Hid` on transport failure, `ShortRead` on a
+    /// truncated reply, `UnexpectedResponse` when the reply is not a status
+    /// report, and `ImplausibleReading` when a value is out of bounds.
     pub fn status(&self) -> Result<FanStatus, ControllerError> {
         let request = build_command(CMD_STATUS, &[]);
         assert_eq!(request[1], CMD_STATUS, "status request mislabelled");

@@ -42,8 +42,13 @@ pub(crate) const CH_PUMP: usize = 4;
 pub(crate) const MAX_DUTY: u8 = 100;
 /// Highest plausible temperature, in degrees Celsius.
 pub(crate) const TEMP_CEILING: u8 = 120;
-/// Highest plausible speed, used only for sanity assertions.
+/// Highest plausible speed; readings above it are rejected as implausible.
 const RPM_CEILING: u16 = 12_000;
+
+/// Byte offset of the first channel's speed in a status reply.
+const STATUS_RPM_OFFSET: usize = 0x02;
+/// Byte offset of the first channel's duty in a status reply.
+const STATUS_DUTY_OFFSET: usize = 0x16;
 
 // --- Curve point limits (public) --------------------------------------------
 
@@ -78,21 +83,38 @@ const _: () = assert!(
     FIRST_SLOT_OFFSET + CHANNEL_COUNT * SLOT_STRIDE <= REPORT_LEN,
     "channel slots overflow the report"
 );
+const _: () = assert!(
+    STATUS_RPM_OFFSET + CHANNEL_COUNT * 2 <= STATUS_DUTY_OFFSET,
+    "status speed block overlaps the duty block"
+);
+const _: () = assert!(
+    STATUS_DUTY_OFFSET + CHANNEL_COUNT * 2 <= REPORT_LEN,
+    "status duty block overflows the report"
+);
 
 // --- Status -----------------------------------------------------------------
 
-/// Measured speeds for the mapped channels, as reported by the device.
+/// Measured speeds and duty cycles for the mapped channels, from one status
+/// reply.
 ///
-/// The status reply layout is not yet capture-confirmed; the offsets in
-/// `parse_status` are guarded by plausibility assertions.
+/// The layout matches liquidctl's driver for the same cooler family: five
+/// little-endian u16 speeds from offset `0x02`, five little-endian u16 duty
+/// percentages from offset `0x16`, in channel-slot order. Readings outside
+/// plausible bounds are rejected during parsing.
 #[derive(Debug, Clone, Copy)]
 pub struct FanStatus {
     /// Speed of the first radiator fan in RPM.
     pub radiator_rpm: u16,
+    /// Duty of the radiator fan channel, in percent (0–100).
+    pub radiator_duty: u8,
     /// Waterblock (60 mm) fan speed in RPM.
     pub waterblock_rpm: u16,
+    /// Duty of the waterblock fan channel, in percent (0–100).
+    pub waterblock_duty: u8,
     /// Pump speed in RPM.
     pub pump_rpm: u16,
+    /// Duty of the pump channel, in percent (0–100).
+    pub pump_duty: u8,
 }
 
 // --- Channel curve ----------------------------------------------------------
@@ -302,26 +324,54 @@ pub(crate) fn build_command(command: u8, payload: &[u8]) -> [u8; REPORT_LEN] {
     buffer
 }
 
-/// Parses a status reply. Only the request opcode is confirmed; the byte
-/// offsets here are unverified and guarded by plausibility assertions.
+/// Reads one channel's little-endian u16 from a status reply block.
+fn status_channel_u16(report: &[u8; REPORT_LEN], base: usize, channel: usize) -> u16 {
+    assert!(channel < CHANNEL_COUNT, "channel outside the report");
+    assert!(
+        base == STATUS_RPM_OFFSET || base == STATUS_DUTY_OFFSET,
+        "not a status block offset: {base:#x}"
+    );
+    let offset = base + channel * 2;
+
+    u16::from_le_bytes([report[offset], report[offset + 1]])
+}
+
+/// Reads one channel's speed from a status reply, rejecting implausible
+/// values (a sign of a corrupt or misaligned reply).
+fn status_rpm(report: &[u8; REPORT_LEN], channel: usize) -> Result<u16, ControllerError> {
+    let value = status_channel_u16(report, STATUS_RPM_OFFSET, channel);
+    if value > RPM_CEILING {
+        return Err(ControllerError::ImplausibleReading(value));
+    }
+
+    Ok(value)
+}
+
+/// Reads one channel's duty percentage from a status reply, rejecting values
+/// above 100.
+fn status_duty(report: &[u8; REPORT_LEN], channel: usize) -> Result<u8, ControllerError> {
+    let value = status_channel_u16(report, STATUS_DUTY_OFFSET, channel);
+    if value > u16::from(MAX_DUTY) {
+        return Err(ControllerError::ImplausibleReading(value));
+    }
+
+    u8::try_from(value).map_err(|_| ControllerError::ImplausibleReading(value))
+}
+
+/// Parses a status reply into speeds and duties for the mapped channels. The
+/// speed offsets are capture-confirmed; the duty offsets match liquidctl's
+/// driver for the same family.
 pub(crate) fn parse_status(report: &[u8; REPORT_LEN]) -> Result<FanStatus, ControllerError> {
-    assert_eq!(report.len(), REPORT_LEN, "status report wrong length");
     if report[1] != CMD_STATUS {
         return Err(ControllerError::UnexpectedResponse(report[1]));
     }
-    let status = FanStatus {
-        radiator_rpm: u16::from_le_bytes([report[2], report[3]]),
-        waterblock_rpm: u16::from_le_bytes([report[8], report[9]]),
-        pump_rpm: u16::from_le_bytes([report[10], report[11]]),
-    };
-    assert!(
-        status.pump_rpm <= RPM_CEILING,
-        "pump rpm implausible - offsets wrong?"
-    );
-    assert!(
-        status.radiator_rpm <= RPM_CEILING,
-        "radiator rpm implausible - offsets wrong?"
-    );
 
-    Ok(status)
+    Ok(FanStatus {
+        radiator_rpm: status_rpm(report, 0)?,
+        radiator_duty: status_duty(report, 0)?,
+        waterblock_rpm: status_rpm(report, CH_WATERBLOCK)?,
+        waterblock_duty: status_duty(report, CH_WATERBLOCK)?,
+        pump_rpm: status_rpm(report, CH_PUMP)?,
+        pump_duty: status_duty(report, CH_PUMP)?,
+    })
 }
