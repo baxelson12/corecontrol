@@ -27,16 +27,18 @@ export function dutyToY(duty: number): number {
 }
 
 /**
- * Builds the SVG path for a non-empty point list, extended horizontally to
- * both plot edges so the curve covers the full temperature range.
+ * Builds the SVG path for a point list, extended horizontally to both plot
+ * edges so the curve covers the full temperature range. An empty list yields
+ * an empty path.
  */
 export function linePath(points: readonly CurvePoint[], tempMax: number): string {
   const px = points.map((p) => ({
     x: tempToX(clamp(p.temp, 0, tempMax), tempMax),
     y: dutyToY(clamp(p.duty, 0, DUTY_MAX)),
   }));
+  const first = px[0];
+  const last = px[px.length - 1];
+  if (first === undefined || last === undefined) return "";
   const segments = px.map((p) => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" L");
-  const firstY = px[0].y.toFixed(1);
-  const lastY = px[px.length - 1].y.toFixed(1);
-  return `M${PLOT_LEFT} ${firstY} L${segments} L${PLOT_RIGHT} ${lastY}`;
+  return `M${PLOT_LEFT} ${first.y.toFixed(1)} L${segments} L${PLOT_RIGHT} ${last.y.toFixed(1)}`;
 }

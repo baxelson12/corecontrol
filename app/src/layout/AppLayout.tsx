@@ -6,7 +6,7 @@ import { ThemeToggle } from "../components/ThemeToggle";
 import { StatCard } from "../components/StatCard";
 import type { StatCardProps } from "../components/StatCard";
 import { FanCurveCard } from "../components/FanCurveCard";
-import type { CurvePointMoveHandler, CurveSeries } from "../components/types";
+import type { CurvePointMoveHandler, CurveSeries, ThemeName } from "../components/types";
 
 const useStyles = makeStyles({
   root: {
@@ -47,17 +47,17 @@ export interface AppLayoutProps {
   readonly deviceLabel: string;
   /** Product name, e.g. "MEG Core Liquid S280". */
   readonly deviceName: string;
-  readonly isDark: boolean;
+  readonly theme: ThemeName;
   /** One readout card per cooling channel. */
   readonly stats: readonly StatCardProps[];
   readonly series: readonly CurveSeries[];
   /** Whether edited curves differ from the applied ones. */
   readonly dirty: boolean;
-  readonly tempMax?: number;
-  readonly showGrid?: boolean;
-  readonly showFill?: boolean;
+  readonly tempMax?: number | undefined;
+  readonly showGrid?: boolean | undefined;
+  readonly showFill?: boolean | undefined;
   readonly onToggleTheme: () => void;
-  readonly onPointMove?: CurvePointMoveHandler;
+  readonly onPointMove?: CurvePointMoveHandler | undefined;
   readonly onRevert: () => void;
   readonly onApply: () => void;
   readonly onDragStart: () => void;
@@ -85,7 +85,7 @@ export function AppLayout(props: AppLayoutProps): ReactElement {
       <main className={styles.main}>
         <div className={styles.headerRow}>
           <DeviceHeader label={props.deviceLabel} name={props.deviceName} />
-          <ThemeToggle isDark={props.isDark} onToggle={props.onToggleTheme} />
+          <ThemeToggle theme={props.theme} onToggle={props.onToggleTheme} />
         </div>
         <div className={styles.statsGrid}>
           {props.stats.map((stat) => (

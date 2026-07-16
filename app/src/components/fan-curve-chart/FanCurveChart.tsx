@@ -19,17 +19,17 @@ export interface FanCurveChartProps {
   /** Curves to draw, in paint order. */
   readonly series: readonly CurveSeries[];
   /** Upper end of the temperature axis in °C. Defaults to 120. */
-  readonly tempMax?: number;
+  readonly tempMax?: number | undefined;
   /** Minor grid lines. Defaults to on. */
-  readonly showGrid?: boolean;
+  readonly showGrid?: boolean | undefined;
   /** Soft fill under each curve. Defaults to off. */
-  readonly showFill?: boolean;
+  readonly showFill?: boolean | undefined;
   /**
    * Called repeatedly while a point is dragged, with the point clamped to the
    * chart domain. Snapping and ordering between neighbors are the caller's
    * concern; the chart renders whatever `series` it is given.
    */
-  readonly onPointMove?: CurvePointMoveHandler;
+  readonly onPointMove?: CurvePointMoveHandler | undefined;
 }
 
 /**

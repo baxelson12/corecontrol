@@ -8,7 +8,7 @@ export interface CurveSeriesLayerProps {
   readonly seriesIndex: number;
   readonly tempMax: number;
   readonly showFill: boolean;
-  readonly onPointMove?: CurvePointMoveHandler;
+  readonly onPointMove?: CurvePointMoveHandler | undefined;
 }
 
 /**

@@ -33,10 +33,10 @@ export interface FanCurveCardProps {
   readonly series: readonly CurveSeries[];
   /** Whether edited curves differ from the applied ones; shows the pill. */
   readonly dirty: boolean;
-  readonly tempMax?: number;
-  readonly showGrid?: boolean;
-  readonly showFill?: boolean;
-  readonly onPointMove?: CurvePointMoveHandler;
+  readonly tempMax?: number | undefined;
+  readonly showGrid?: boolean | undefined;
+  readonly showFill?: boolean | undefined;
+  readonly onPointMove?: CurvePointMoveHandler | undefined;
   readonly onRevert: () => void;
   readonly onApply: () => void;
 }

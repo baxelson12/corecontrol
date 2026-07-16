@@ -17,6 +17,9 @@ export interface CurveSeries {
 /** Reports a chart point being dragged to a new chart-domain position. */
 export type CurvePointMoveHandler = (seriesIndex: number, pointIndex: number, point: CurvePoint) => void;
 
+/** The two UI color themes. */
+export type ThemeName = "light" | "dark";
+
 /** Channel colors from the design. */
 export const SERIES_COLORS = {
   radiatorFans: "oklch(0.68 0.14 235)",

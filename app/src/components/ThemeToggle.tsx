@@ -1,6 +1,8 @@
 import { Button } from "@fluentui/react-components";
 import { useId } from "react";
 import type { ReactElement } from "react";
+import { match } from "ts-pattern";
+import type { ThemeName } from "./types";
 
 /**
  * Sun glyph, shown in dark mode to offer switching to light.
@@ -42,8 +44,8 @@ function MoonIcon(): ReactElement {
 }
 
 export interface ThemeToggleProps {
-  /** Whether the app is currently in dark mode. */
-  readonly isDark: boolean;
+  /** The app's current theme. */
+  readonly theme: ThemeName;
   readonly onToggle: () => void;
 }
 
@@ -53,11 +55,15 @@ export interface ThemeToggleProps {
  *
  * @returns The toggle button.
  */
-export function ThemeToggle({ isDark, onToggle }: ThemeToggleProps): ReactElement {
+export function ThemeToggle({ theme, onToggle }: ThemeToggleProps): ReactElement {
+  const icon = match(theme)
+    .with("dark", () => <SunIcon />)
+    .with("light", () => <MoonIcon />)
+    .exhaustive();
   return (
     <Button
       appearance="subtle"
-      icon={isDark ? <SunIcon /> : <MoonIcon />}
+      icon={icon}
       onClick={onToggle}
       aria-label="Switch theme"
       title="Switch theme"

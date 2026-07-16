@@ -24,7 +24,7 @@ export interface CurvePointHandleProps {
   readonly point: CurvePoint;
   readonly color: string;
   readonly tempMax: number;
-  readonly onMove?: (point: CurvePoint) => void;
+  readonly onMove?: ((point: CurvePoint) => void) | undefined;
 }
 
 /**

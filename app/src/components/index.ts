@@ -13,4 +13,4 @@ export type { TitleBarProps } from "./TitleBar";
 export { UnsavedChangesPill } from "./UnsavedChangesPill";
 export type { UnsavedChangesPillProps } from "./UnsavedChangesPill";
 export { SERIES_COLORS } from "./types";
-export type { CurvePoint, CurvePointMoveHandler, CurveSeries } from "./types";
+export type { CurvePoint, CurvePointMoveHandler, CurveSeries, ThemeName } from "./types";
