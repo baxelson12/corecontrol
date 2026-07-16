@@ -11,6 +11,8 @@ pub mod s360;
 
 use hidapi::HidApi;
 
+use crate::error::ControllerError;
+
 /// USB vendor ID shared by every Coreliquid in this family.
 pub(crate) const VENDOR_ID: u16 = 0x0db0;
 
@@ -43,6 +45,23 @@ const _: () = assert!(
 /// Returns every model this controller can drive, for display or logging.
 pub fn known_models() -> &'static [ModelSpec] {
     &KNOWN_MODELS
+}
+
+/// Enumerates the recognized models currently attached, creating a private
+/// HID context for the scan. An application calls this at startup to learn
+/// what is in the machine before opening anything.
+///
+/// # Errors
+/// Returns `ControllerError::Hid` when the HID context cannot be created.
+pub fn detect_attached() -> Result<Vec<ModelSpec>, ControllerError> {
+    let api = HidApi::new()?;
+    let attached: Vec<ModelSpec> = available_devices(&api).collect();
+    debug_assert!(
+        attached.len() <= KNOWN_MODELS.len(),
+        "detection yielded more models than the registry holds"
+    );
+
+    Ok(attached)
 }
 
 /// Yields each recognized model currently attached, at most once per model.

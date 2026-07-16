@@ -18,5 +18,5 @@ mod protocol;
 
 pub use cooler::Cooler;
 pub use error::ControllerError;
-pub use models::{ModelSpec, available_devices, known_models};
+pub use models::{ModelSpec, available_devices, detect_attached, known_models};
 pub use protocol::{ChannelCurve, FanConfig, FanStatus, MAX_CURVE_POINTS, MIN_CURVE_POINTS};
