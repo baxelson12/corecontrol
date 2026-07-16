@@ -2,13 +2,15 @@ import { configureStore } from "@reduxjs/toolkit";
 import { themeReducer } from "./themeSlice";
 import { detectionReducer } from "./detectionSlice";
 import { curvesReducer } from "./curvesSlice";
+import { statusReducer } from "./statusSlice";
 
-/** The app store: theme, cooler detection, and fan curve state. */
+/** The app store: theme, cooler detection, fan curves, and live status. */
 export const store = configureStore({
   reducer: {
     theme: themeReducer,
     detection: detectionReducer,
     curves: curvesReducer,
+    status: statusReducer,
   },
 });
 

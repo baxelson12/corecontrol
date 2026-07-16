@@ -37,15 +37,15 @@ export interface StatCardProps {
   readonly label: string;
   /** Channel color, matching its curve on the chart. */
   readonly color: string;
-  /** Current speed in RPM. */
-  readonly rpm: number;
-  /** Current duty in percent. */
-  readonly dutyPct: number;
+  /** Current speed in RPM, or `null` before the first reading. */
+  readonly rpm: number | null;
+  /** Current duty in percent, or `null` before the first reading. */
+  readonly dutyPct: number | null;
 }
 
 /**
  * Live readout card for one cooling channel: colored dot, name, RPM, and
- * duty percentage.
+ * duty percentage. Values still awaiting a reading render as a dash.
  *
  * @returns The stat card.
  */
@@ -58,10 +58,12 @@ export function StatCard({ label, color, rpm, dutyPct }: StatCardProps): ReactEl
         <Caption1 className={styles.muted}>{label}</Caption1>
       </div>
       <Title3 className={styles.value}>
-        {Math.round(rpm).toLocaleString()}
+        {rpm === null ? "—" : Math.round(rpm).toLocaleString()}
         <Caption1 className={styles.unit}> RPM</Caption1>
       </Title3>
-      <Caption1 className={styles.muted}>{Math.round(dutyPct)}% duty</Caption1>
+      <Caption1 className={styles.muted}>
+        {dutyPct === null ? "—" : `${Math.round(dutyPct)}%`} duty
+      </Caption1>
     </div>
   );
 }
