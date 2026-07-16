@@ -41,8 +41,10 @@ construction, because the firmware rejects it too.
 
 `FanConfig` holds the curves for every channel (radiator fans, waterblock fan,
 pump) and serializes them into the two reports the device expects. `FanStatus`
-and the status parser also live here, though the status reply layout is not yet
-confirmed against hardware.
+and the status parser also live here: one status reply carries the current
+speed (RPM) and duty (%) of every channel. The speed offsets were confirmed
+against the S280 capture; the duty offsets match liquidctl's driver for the
+same cooler family.
 
 ### cooler.rs
 
@@ -57,7 +59,7 @@ through it; the other modules back it and stay internal. It provides:
 - `new_config()` to get a `FanConfig` seeded with safe defaults
 - `apply_config(&config)` to write a profile
 - `push_cpu_temp(temp)` to feed the device a temperature so it evaluates curves
-- `status()` to read speeds back
+- `status()` to read the current speed and duty of every channel
 
 ### models/
 
