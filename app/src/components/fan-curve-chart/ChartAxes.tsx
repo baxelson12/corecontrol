@@ -1,6 +1,9 @@
 import { makeStyles, tokens } from "@fluentui/react-components";
 import type { ReactElement } from "react";
-import { AXIS_DIVISIONS, DUTY_MAX, PLOT_LEFT, PLOT_RIGHT, PLOT_TOP, PLOT_BOTTOM, tempToX, dutyToY } from "./geometry";
+import { DUTY_MAX, PLOT_LEFT, PLOT_RIGHT, PLOT_TOP, PLOT_BOTTOM, tempToX, dutyToY } from "./geometry";
+
+/** Spacing of labeled ticks on both axes: every other 5-unit grid line. */
+const TICK_STEP = 10;
 
 const useStyles = makeStyles({
   tickLabel: {
@@ -9,29 +12,37 @@ const useStyles = makeStyles({
   },
 });
 
+/** Tick values from 0 to `max` inclusive, every `TICK_STEP`. */
+function ticks(max: number): readonly number[] {
+  return Array.from({ length: Math.floor(max / TICK_STEP) + 1 }, (_, i) => i * TICK_STEP);
+}
+
+/** A tick's text: the bare value, with the unit only on the last tick. */
+function tickText(value: number, max: number, unit: string): string {
+  return value === Math.floor(max / TICK_STEP) * TICK_STEP ? `${value}${unit}` : `${value}`;
+}
+
 /**
- * The two axis lines with temperature and duty tick labels at each quarter.
+ * The two axis lines, with a temperature label under every other vertical
+ * grid line and a duty label beside every other horizontal one, so any
+ * curve point can be read precisely off the edges of the plot.
  *
  * @returns The axes layer.
  */
 export function ChartAxes({ tempMax }: { readonly tempMax: number }): ReactElement {
   const styles = useStyles();
-  const tempTicks = Array.from({ length: AXIS_DIVISIONS + 1 }, (_, i) =>
-    Math.round((tempMax * i) / AXIS_DIVISIONS),
-  );
-  const dutyTicks = Array.from({ length: AXIS_DIVISIONS + 1 }, (_, i) => (DUTY_MAX * i) / AXIS_DIVISIONS);
   return (
     <g>
       <line x1={PLOT_LEFT} y1={PLOT_BOTTOM} x2={PLOT_RIGHT} y2={PLOT_BOTTOM} stroke={tokens.colorNeutralStroke2} />
       <line x1={PLOT_LEFT} y1={PLOT_TOP} x2={PLOT_LEFT} y2={PLOT_BOTTOM} stroke={tokens.colorNeutralStroke2} />
-      {tempTicks.map((t) => (
+      {ticks(tempMax).map((t) => (
         <text key={t} className={styles.tickLabel} x={tempToX(t, tempMax)} y={PLOT_BOTTOM + 18} textAnchor="middle">
-          {t}°C
+          {tickText(t, tempMax, "°C")}
         </text>
       ))}
-      {dutyTicks.map((d) => (
+      {ticks(DUTY_MAX).map((d) => (
         <text key={d} className={styles.tickLabel} x={PLOT_LEFT - 8} y={dutyToY(d) + 3} textAnchor="end">
-          {d}%
+          {tickText(d, DUTY_MAX, "%")}
         </text>
       ))}
     </g>

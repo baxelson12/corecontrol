@@ -7,7 +7,6 @@ export const PLOT_RIGHT = 606;
 export const PLOT_TOP = 14;
 export const PLOT_BOTTOM = 262;
 export const GRID_STEP = 5;
-export const AXIS_DIVISIONS = 4;
 export const DUTY_MAX = 100;
 export const DEFAULT_TEMP_MAX = 120;
 

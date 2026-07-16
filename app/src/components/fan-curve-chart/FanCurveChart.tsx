@@ -5,6 +5,7 @@ import { VIEW_WIDTH, VIEW_HEIGHT, DEFAULT_TEMP_MAX } from "./geometry";
 import { ChartGrid } from "./ChartGrid";
 import { ChartAxes } from "./ChartAxes";
 import { CurveSeriesLayer } from "./CurveSeriesLayer";
+import { CurveLabels } from "./CurveLabels";
 
 const useStyles = makeStyles({
   svg: {
@@ -61,6 +62,7 @@ export function FanCurveChart({
           onPointMove={onPointMove}
         />
       ))}
+      <CurveLabels series={series} />
     </svg>
   );
 }

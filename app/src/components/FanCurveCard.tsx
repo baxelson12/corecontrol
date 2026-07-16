@@ -1,12 +1,10 @@
 import { Badge, Body1Strong, Caption1, makeStyles, tokens } from "@fluentui/react-components";
 import type { ReactElement } from "react";
 import { FanCurveChart } from "./fan-curve-chart/FanCurveChart";
-import { UnsavedChangesPill } from "./UnsavedChangesPill";
 import type { CurvePointMoveHandler, CurveSeries, CurveSource } from "./types";
 
 const useStyles = makeStyles({
   root: {
-    position: "relative",
     backgroundColor: tokens.colorNeutralBackground1,
     border: `1px solid ${tokens.colorNeutralStroke2}`,
     borderRadius: tokens.borderRadiusXLarge,
@@ -14,7 +12,7 @@ const useStyles = makeStyles({
   },
   header: {
     display: "flex",
-    alignItems: "baseline",
+    alignItems: "center",
     justifyContent: "space-between",
     padding: "0 4px 6px",
   },
@@ -26,45 +24,32 @@ const useStyles = makeStyles({
   hint: {
     color: tokens.colorNeutralForeground4,
   },
-  pill: {
-    position: "absolute",
-    left: "50%",
-    bottom: "20px",
-    transform: "translateX(-50%)",
-  },
 });
 
 export interface FanCurveCardProps {
   readonly series: readonly CurveSeries[];
-  /** Whether edited curves differ from the applied ones; shows the pill. */
-  readonly dirty: boolean;
   /** Where the shown curves came from; defaults get a "not applied" badge. */
   readonly source: CurveSource;
   readonly tempMax?: number | undefined;
   readonly showGrid?: boolean | undefined;
   readonly showFill?: boolean | undefined;
   readonly onPointMove?: CurvePointMoveHandler | undefined;
-  readonly onRevert: () => void;
-  readonly onApply: () => void;
 }
 
 /**
- * The fan curve card: title, drag hint, the chart, and the floating
- * unsaved-changes pill while `dirty`. While the curves are the fallback
- * defaults rather than a profile read from the device, a badge says so.
+ * The fan curve card: title, drag hint, and the chart. While the curves are
+ * the fallback defaults rather than a profile read from the device, a badge
+ * says so. The unsaved-changes pill lives in the layout, below the card.
  *
  * @returns The chart card.
  */
 export function FanCurveCard({
   series,
-  dirty,
   source,
   tempMax,
   showGrid,
   showFill,
   onPointMove,
-  onRevert,
-  onApply,
 }: FanCurveCardProps): ReactElement {
   const styles = useStyles();
   return (
@@ -87,11 +72,6 @@ export function FanCurveCard({
         showFill={showFill}
         onPointMove={onPointMove}
       />
-      {dirty && (
-        <div className={styles.pill}>
-          <UnsavedChangesPill onRevert={onRevert} onApply={onApply} />
-        </div>
-      )}
     </div>
   );
 }

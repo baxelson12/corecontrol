@@ -6,6 +6,7 @@ import { ThemeToggle } from "../components/ThemeToggle";
 import { StatCard } from "../components/StatCard";
 import type { StatCardProps } from "../components/StatCard";
 import { FanCurveCard } from "../components/FanCurveCard";
+import { UnsavedChangesPill } from "../components/UnsavedChangesPill";
 import type { CurvePointMoveHandler, CurveSeries, CurveSource, ThemeName } from "../components/types";
 
 const useStyles = makeStyles({
@@ -37,6 +38,13 @@ const useStyles = makeStyles({
     display: "grid",
     gridTemplateColumns: "repeat(3, 1fr)",
     gap: "12px",
+  },
+  pillRow: {
+    position: "fixed",
+    bottom: "16px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    zIndex: 10,
   },
 });
 
@@ -96,15 +104,17 @@ export function AppLayout(props: AppLayoutProps): ReactElement {
         </div>
         <FanCurveCard
           series={props.series}
-          dirty={props.dirty}
           source={props.curveSource}
           tempMax={props.tempMax}
           showGrid={props.showGrid}
           showFill={props.showFill}
           onPointMove={props.onPointMove}
-          onRevert={props.onRevert}
-          onApply={props.onApply}
         />
+        {props.dirty && (
+          <div className={styles.pillRow}>
+            <UnsavedChangesPill onRevert={props.onRevert} onApply={props.onApply} />
+          </div>
+        )}
       </main>
     </div>
   );

@@ -27,7 +27,7 @@ export interface UnsavedChangesPillProps {
 
 /**
  * Floating pill shown while edited fan curves differ from the applied ones.
- * Positioning it over the chart is the layout's job.
+ * The layout keeps it below the chart, at the bottom of the window.
  *
  * @returns The pill with Revert and Apply actions.
  */
