@@ -16,9 +16,10 @@ justfile          workspace tasks
 
 The app consumes the library through the `Cooler` facade. Startup device
 detection (`detect_cooler`), live status polling (`fan_status`, speeds and
-duties for the stat cards), and the fan curve profile (`read_fan_profile` for
-the curve the device is running, `apply_fan_profile` to write an edited one)
-are wired end to end.
+duties for the stat cards), and the fan curve profile (`apply_fan_profile`)
+are wired end to end. The app owns the profile: the applied curves and the
+theme choice persist in `settings.json` under the per-user app config
+directory, and the saved profile is pushed back to the cooler on startup.
 
 ## Prerequisites
 
