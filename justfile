@@ -21,6 +21,10 @@ check:
 
 # --- Desktop app (app/) -----------------------------------------------------
 
+# Type-check the app backend for the Windows target, no binary produced.
+check-app:
+    cargo xwin check -p coreliquid-app --features custom-protocol --target x86_64-pc-windows-msvc
+
 # Install frontend dependencies.
 install:
     cd app && pnpm install
