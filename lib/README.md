@@ -46,9 +46,13 @@ confirmed against hardware.
 
 ### cooler.rs
 
-`Cooler` is the handle to an open device. It provides:
+`Cooler` is the public entry point. Consumers scan, open, and drive the device
+through it; the other modules back it and stay internal. It provides:
 
-- `Cooler::detect()` and `Cooler::open(api, spec)` to find and open a cooler
+- `Cooler::scan()` to list the attached models without opening anything, and
+  `Cooler::known_models()` to list every model the library recognizes
+- `Cooler::open(spec)` to open a scanned model, or `Cooler::detect()` to scan
+  and open the first match in one call
 - `initialize()` to run the connect handshake the device expects before control
 - `new_config()` to get a `FanConfig` seeded with safe defaults
 - `apply_config(&config)` to write a profile
@@ -57,10 +61,10 @@ confirmed against hardware.
 
 ### models/
 
+The internal registry behind `Cooler::scan()` and `Cooler::known_models()`.
 Each supported cooler is a small file exposing one `SPEC` constant: its USB
-product ID, display name, and radiator fan count. `mod.rs` gathers those into a
-registry and exposes `available_devices()` for detection and `known_models()`
-for listing. Adding a cooler is a new file plus one line in the registry array,
+product ID, display name, and radiator fan count. `mod.rs` gathers those into
+a registry. Adding a cooler is a new file plus one line in the registry array,
 with no other code touched.
 
 ### error.rs
@@ -86,6 +90,9 @@ config.set_radiators(ChannelCurve::from_points(&[(35, 30), (50, 55), (65, 80), (
 config.set_pump(ChannelCurve::from_points(&[(30, 80), (45, 85), (60, 95), (75, 100)]));
 cooler.apply_config(&config)?;
 ```
+
+To present a device picker instead of grabbing the first match, call
+`Cooler::scan()` and pass the chosen `ModelSpec` to `Cooler::open`.
 
 ## Building
 

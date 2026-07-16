@@ -14,8 +14,9 @@ app/              the Tauri desktop app
 justfile          workspace tasks
 ```
 
-The app scaffold does **not** yet consume the library — it ships a single
-example `ping` command to prove the frontend↔backend bridge works.
+The app consumes the library through the `Cooler` facade. Startup device
+detection is wired end to end (`detect_cooler`); status polling and profile
+commands come next.
 
 ## Prerequisites
 
