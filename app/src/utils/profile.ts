@@ -13,12 +13,6 @@ export interface FanProfile {
   readonly pump: readonly CurvePoint[];
 }
 
-/** Outcome of reading the profile the device is currently running. */
-export type ProfileRead =
-  | { readonly state: "running"; readonly profile: FanProfile }
-  | { readonly state: "none" }
-  | { readonly state: "failed" };
-
 /** Fewest points a curve may carry; the firmware rejects fewer. */
 const MIN_POINTS = 4;
 /** Most points a curve may carry; the wire format holds no more. */
@@ -43,28 +37,17 @@ function legalLength(points: readonly CurvePoint[]): boolean {
 }
 
 /**
- * Reads the profile the cooler is currently running. Folds failures (no
- * cooler open, device error, malformed reply) into the `failed` state so the
- * caller can fall back to defaults. Never throws.
+ * Validates a value from outside the typed world (an IPC reply, a settings
+ * field) as a fan profile with firmware-legal curve lengths.
  *
- * @returns The read outcome: a running profile, `none` when the device is
- * not running a custom curve, or `failed`.
+ * @returns The profile, or `null` when the value is not one.
  */
-export async function readFanProfile(): Promise<ProfileRead> {
-  try {
-    const reply: unknown = await invoke("read_fan_profile");
-    return match<unknown, ProfileRead>(reply)
-      .with(null, () => ({ state: "none" }))
-      .with(profilePattern, (profile) =>
-        [profile.radiators, profile.waterblock, profile.pump].every(legalLength)
-          ? { state: "running", profile }
-          : { state: "failed" },
-      )
-      .otherwise(() => ({ state: "failed" }));
-  } catch (error) {
-    console.error("profile read failed:", error);
-    return { state: "failed" };
-  }
+export function parseProfile(value: unknown): FanProfile | null {
+  return match<unknown, FanProfile | null>(value)
+    .with(profilePattern, (profile) =>
+      [profile.radiators, profile.waterblock, profile.pump].every(legalLength) ? profile : null,
+    )
+    .otherwise(() => null);
 }
 
 /**

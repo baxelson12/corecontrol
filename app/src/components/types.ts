@@ -18,11 +18,11 @@ export interface CurveSeries {
 export type CurvePointMoveHandler = (seriesIndex: number, pointIndex: number, point: CurvePoint) => void;
 
 /**
- * Where the curves on the chart came from: read from (or written to) the
- * device, or the design-fallback defaults shown while the device is not
- * running a custom profile.
+ * Where the curves on the chart came from: confirmed on the device, loaded
+ * from the saved settings but not yet confirmed on the device, or the
+ * design-fallback defaults shown while no profile has ever been saved.
  */
-export type CurveSource = "device" | "defaults";
+export type CurveSource = "device" | "saved" | "defaults";
 
 /** The two UI color themes. */
 export type ThemeName = "light" | "dark";

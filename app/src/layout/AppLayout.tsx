@@ -1,5 +1,6 @@
 import { makeStyles, tokens } from "@fluentui/react-components";
 import type { ReactElement } from "react";
+import { match } from "ts-pattern";
 import { TitleBar } from "../components/TitleBar";
 import { DeviceHeader } from "../components/DeviceHeader";
 import { ThemeToggle } from "../components/ThemeToggle";
@@ -84,6 +85,11 @@ export interface AppLayoutProps {
  */
 export function AppLayout(props: AppLayoutProps): ReactElement {
   const styles = useStyles();
+  const pillMessage = match(props.curveSource)
+    .with("defaults", () => "No saved profile yet")
+    .with("saved", () => "Saved profile not applied")
+    .with("device", () => "Unsaved changes")
+    .exhaustive();
   return (
     <div className={styles.root}>
       <TitleBar
@@ -104,7 +110,6 @@ export function AppLayout(props: AppLayoutProps): ReactElement {
         </div>
         <FanCurveCard
           series={props.series}
-          source={props.curveSource}
           tempMax={props.tempMax}
           showGrid={props.showGrid}
           showFill={props.showFill}
@@ -112,7 +117,12 @@ export function AppLayout(props: AppLayoutProps): ReactElement {
         />
         {props.dirty && (
           <div className={styles.pillRow}>
-            <UnsavedChangesPill onRevert={props.onRevert} onApply={props.onApply} />
+            <UnsavedChangesPill
+              message={pillMessage}
+              revertDisabled={props.curveSource === "defaults"}
+              onRevert={props.onRevert}
+              onApply={props.onApply}
+            />
           </div>
         )}
       </main>

@@ -1,7 +1,7 @@
-import { Badge, Body1Strong, Caption1, makeStyles, tokens } from "@fluentui/react-components";
+import { Body1Strong, Caption1, makeStyles, tokens } from "@fluentui/react-components";
 import type { ReactElement } from "react";
 import { FanCurveChart } from "./fan-curve-chart/FanCurveChart";
-import type { CurvePointMoveHandler, CurveSeries, CurveSource } from "./types";
+import type { CurvePointMoveHandler, CurveSeries } from "./types";
 
 const useStyles = makeStyles({
   root: {
@@ -16,11 +16,6 @@ const useStyles = makeStyles({
     justifyContent: "space-between",
     padding: "0 4px 6px",
   },
-  titleGroup: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-  },
   hint: {
     color: tokens.colorNeutralForeground4,
   },
@@ -28,8 +23,6 @@ const useStyles = makeStyles({
 
 export interface FanCurveCardProps {
   readonly series: readonly CurveSeries[];
-  /** Where the shown curves came from; defaults get a "not applied" badge. */
-  readonly source: CurveSource;
   readonly tempMax?: number | undefined;
   readonly showGrid?: boolean | undefined;
   readonly showFill?: boolean | undefined;
@@ -37,15 +30,14 @@ export interface FanCurveCardProps {
 }
 
 /**
- * The fan curve card: title, drag hint, and the chart. While the curves are
- * the fallback defaults rather than a profile read from the device, a badge
- * says so. The unsaved-changes pill lives in the layout, below the card.
+ * The fan curve card: title, drag hint, and the chart. Curve state (unsaved
+ * edits, no saved profile) is reported by the pill in the layout, below the
+ * card.
  *
  * @returns The chart card.
  */
 export function FanCurveCard({
   series,
-  source,
   tempMax,
   showGrid,
   showFill,
@@ -55,14 +47,7 @@ export function FanCurveCard({
   return (
     <div className={styles.root}>
       <div className={styles.header}>
-        <div className={styles.titleGroup}>
-          <Body1Strong>Fan curve</Body1Strong>
-          {source === "defaults" && (
-            <Badge appearance="tint" color="warning" size="small">
-              Defaults, not applied yet
-            </Badge>
-          )}
-        </div>
+        <Body1Strong>Fan curve</Body1Strong>
         <Caption1 className={styles.hint}>Drag points to adjust</Caption1>
       </div>
       <FanCurveChart

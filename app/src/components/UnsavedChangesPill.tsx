@@ -21,6 +21,8 @@ const useStyles = makeStyles({
 export interface UnsavedChangesPillProps {
   /** Status text. Defaults to "Unsaved changes". */
   readonly message?: string;
+  /** Disables Revert while there is no saved profile to fall back to. */
+  readonly revertDisabled?: boolean;
   readonly onRevert: () => void;
   readonly onApply: () => void;
 }
@@ -33,6 +35,7 @@ export interface UnsavedChangesPillProps {
  */
 export function UnsavedChangesPill({
   message = "Unsaved changes",
+  revertDisabled = false,
   onRevert,
   onApply,
 }: UnsavedChangesPillProps): ReactElement {
@@ -40,7 +43,7 @@ export function UnsavedChangesPill({
   return (
     <div className={styles.root}>
       <Caption1 className={styles.message}>{message}</Caption1>
-      <Button size="small" onClick={onRevert}>
+      <Button size="small" disabled={revertDisabled} onClick={onRevert}>
         Revert
       </Button>
       <Button size="small" appearance="primary" onClick={onApply}>

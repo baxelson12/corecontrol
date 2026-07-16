@@ -1,10 +1,10 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import { match } from "ts-pattern";
 import type { CurvePoint, CurveSeries, CurveSource } from "../components/types";
 import { DEFAULT_SERIES } from "../defaults";
-import { applyFanProfile, profileToSeries, readFanProfile, seriesToProfile } from "../utils/profile";
-import type { ProfileRead } from "../utils/profile";
+import { applyFanProfile, profileToSeries, seriesToProfile } from "../utils/profile";
+import { saveFanProfile } from "../utils/settings";
+import { settingsLoadStarted } from "./settingsThunks";
 
 const SNAP = 5;
 const TEMP_MAX = 120;
@@ -28,20 +28,41 @@ export interface PointMove {
 }
 
 /**
- * Loads the profile the device is currently running. `readFanProfile` folds
- * its own failures into the outcome union, so this thunk always fulfills.
+ * Pushes the saved profile to the cooler once one is open, so the app, not
+ * the device, decides what runs. A no-op unless the shown curves came from
+ * the saved settings. Fulfills with whether the device accepted them.
  */
-export const profileLoadStarted = createAsyncThunk("curves/load", readFanProfile);
+export const savedProfilePushStarted = createAsyncThunk<
+  boolean,
+  void,
+  { state: { curves: CurvesState } }
+>("curves/pushSaved", async (_ignored, { getState }) => {
+  const { applied, source } = getState().curves;
+  if (source !== "saved") {
+    return false;
+  }
+  const profile = seriesToProfile(applied);
+  return profile === null ? false : applyFanProfile(profile);
+});
 
 /**
- * Writes the given curves to the device. Fulfills with whether the device
- * accepted them; the reducer only commits the curves as applied on success.
+ * Writes the given curves to the device and, when the device accepts them,
+ * persists them as the saved profile for the next launch. Fulfills with
+ * whether the device accepted them; the reducer only commits the curves as
+ * applied on success.
  */
 export const curvesApplied = createAsyncThunk(
   "curves/apply",
   async (series: readonly CurveSeries[]): Promise<boolean> => {
     const profile = seriesToProfile(series);
-    return profile === null ? false : applyFanProfile(profile);
+    if (profile === null) {
+      return false;
+    }
+    const accepted = await applyFanProfile(profile);
+    if (accepted) {
+      await saveFanProfile(profile);
+    }
+    return accepted;
   },
 );
 
@@ -95,13 +116,14 @@ const curvesSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(profileLoadStarted.fulfilled, (_state, action): CurvesState =>
-      match<ProfileRead, CurvesState>(action.payload)
-        .with({ state: "running" }, ({ profile }) => {
-          const series = profileToSeries(profile);
-          return { edited: series, applied: series, source: "device" };
-        })
-        .otherwise(() => initialState),
+    builder.addCase(settingsLoadStarted.fulfilled, (state, action): CurvesState => {
+      const profile = action.payload.fanProfile;
+      if (profile === null) return state;
+      const series = profileToSeries(profile);
+      return { edited: series, applied: series, source: "saved" };
+    });
+    builder.addCase(savedProfilePushStarted.fulfilled, (state, action): CurvesState =>
+      action.payload ? { ...state, source: "device" } : state,
     );
     builder.addCase(curvesApplied.fulfilled, (state, action): CurvesState => {
       if (!action.payload) return state;
@@ -112,11 +134,12 @@ const curvesSlice = createSlice({
 
 /**
  * Whether the chart shows state the device is not running: edits differing
- * from the applied curves, or fallback defaults never written to the device.
+ * from the applied curves, or curves (saved or fallback defaults) the device
+ * has not yet confirmed.
  */
 export function selectCurvesDirty(state: { readonly curves: CurvesState }): boolean {
   const { edited, applied, source } = state.curves;
-  if (source === "defaults") return true;
+  if (source !== "device") return true;
   if (edited.length !== applied.length) return true;
   return !edited.every((s, i) => {
     const t = applied[i];

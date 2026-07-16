@@ -8,11 +8,12 @@ import { deviceName } from "./utils/detection";
 import { useAppDispatch, useAppSelector } from "./store/hooks";
 import { themeToggled } from "./store/themeSlice";
 import { coolerScanStarted } from "./store/detectionSlice";
+import { settingsLoadStarted } from "./store/settingsThunks";
 import {
   curvePointMoved,
   curvesApplied,
   curvesReverted,
-  profileLoadStarted,
+  savedProfilePushStarted,
   selectCurvesDirty,
 } from "./store/curvesSlice";
 import { fanStatusPolled, selectFanStats } from "./store/statusSlice";
@@ -23,9 +24,9 @@ const appWindow = getCurrentWindow();
 const STATUS_POLL_MS = 1000;
 
 /**
- * Root view: kicks off cooler detection on startup, then loads the fan
- * profile the device is running and polls it for live status, binding the
- * store to the presentational layout.
+ * Root view: loads the persisted settings, then kicks off cooler detection;
+ * once a cooler is open it pushes the saved fan profile to the device and
+ * polls it for live status, binding the store to the presentational layout.
  *
  * @returns The themed app.
  */
@@ -40,14 +41,17 @@ function App(): ReactElement {
   const coolerFound = detection.state === "found";
 
   useEffect(() => {
-    void dispatch(coolerScanStarted());
+    void (async () => {
+      await dispatch(settingsLoadStarted());
+      await dispatch(coolerScanStarted());
+    })();
   }, [dispatch]);
 
   useEffect(() => {
     if (!coolerFound) {
       return undefined;
     }
-    void dispatch(profileLoadStarted());
+    void dispatch(savedProfilePushStarted());
     void dispatch(fanStatusPolled());
     const timer = setInterval(() => void dispatch(fanStatusPolled()), STATUS_POLL_MS);
     return () => clearInterval(timer);
@@ -69,7 +73,7 @@ function App(): ReactElement {
         series={series}
         dirty={dirty && coolerFound}
         curveSource={curveSource}
-        onToggleTheme={() => dispatch(themeToggled())}
+        onToggleTheme={() => void dispatch(themeToggled())}
         onPointMove={(seriesIndex, pointIndex, point) =>
           dispatch(curvePointMoved({ seriesIndex, pointIndex, point }))
         }
