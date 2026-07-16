@@ -4,7 +4,7 @@
 //! [`detect_cooler`] runs the startup detection scan; commands for opening
 //! the device and driving profiles come later.
 
-use coreliquid::detect_attached;
+use coreliquid::Cooler;
 use serde::Serialize;
 
 /// One recognized cooler found attached to the machine, shaped for the UI.
@@ -30,7 +30,7 @@ pub struct DetectedCooler {
 /// Returns `Err` with a message when the HID subsystem cannot be queried.
 #[tauri::command]
 async fn detect_cooler() -> Result<Option<DetectedCooler>, String> {
-    let attached = tauri::async_runtime::spawn_blocking(detect_attached)
+    let attached = tauri::async_runtime::spawn_blocking(Cooler::scan)
         .await
         .map_err(|error| error.to_string())?
         .map_err(|error| error.to_string())?;
