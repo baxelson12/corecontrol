@@ -3,9 +3,10 @@
 //! The backend is a thin IPC layer over the `coreliquid` control library.
 //! [`detect_cooler`] runs the startup detection scan and opens the first
 //! recognized cooler; [`fan_status`] reads its live speeds and duties;
-//! [`apply_fan_profile`] writes the fan curve profile. The [`settings`]
-//! module persists the theme choice and the last applied profile across
-//! launches. The open device and the settings live in Tauri-managed state
+//! [`apply_fan_profile`] writes the fan curve profile; [`read_fan_profile`]
+//! reads back the profile the device is running, so the UI can confirm a
+//! write took effect. The [`settings`] module persists the theme choice and
+//! the last applied profile across launches. The open device and the settings live in Tauri-managed state
 //! shared by the commands.
 
 mod settings;
@@ -197,6 +198,27 @@ fn write_profile(handle: &Mutex<Option<Cooler>>, profile: &FanProfile) -> Result
         .map_err(|error| error.to_string())
 }
 
+/// Reads back the profile the cooler stored in `handle` is running.
+///
+/// # Returns
+/// The running configuration, or `None` when the device is not running a
+/// custom-curve profile on every channel.
+///
+/// # Errors
+/// Returns `Err` with a message when no cooler is open, the state mutex is
+/// poisoned, or the device read fails.
+fn read_device_profile(handle: &Mutex<Option<Cooler>>) -> Result<Option<FanProfile>, String> {
+    let mut slot = handle
+        .lock()
+        .map_err(|_| "cooler state mutex poisoned".to_owned())?;
+    let cooler = slot
+        .as_mut()
+        .ok_or_else(|| "no cooler is open".to_owned())?;
+    let config = cooler.read_profile().map_err(|error| error.to_string())?;
+
+    Ok(config.as_ref().map(FanProfile::from))
+}
+
 /// IPC command: scans the HID bus for supported coolers and opens the first
 /// match, keeping it for [`fan_status`].
 ///
@@ -256,6 +278,28 @@ async fn apply_fan_profile(
         .map_err(|error| error.to_string())?
 }
 
+/// IPC command: reads back the fan curve profile the cooler is currently
+/// running, so the UI can confirm an applied profile took effect.
+///
+/// Runs the HID exchange on a blocking thread so the IPC runtime is never
+/// stalled by the device.
+///
+/// # Returns
+/// The running profile, or `None` when the device is not running a
+/// custom-curve profile on every channel.
+///
+/// # Errors
+/// Returns `Err` with a message when no cooler is open or the read fails.
+#[tauri::command]
+async fn read_fan_profile(
+    state: tauri::State<'_, CoolerHandle>,
+) -> Result<Option<FanProfile>, String> {
+    let handle = state.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || read_device_profile(&handle.0))
+        .await
+        .map_err(|error| error.to_string())?
+}
+
 /// Builds and runs the Tauri application, registering the IPC handlers.
 ///
 /// # Panics
@@ -273,6 +317,7 @@ pub fn run() {
             detect_cooler,
             fan_status,
             apply_fan_profile,
+            read_fan_profile,
             settings::load_settings,
             settings::save_theme,
             settings::save_fan_profile

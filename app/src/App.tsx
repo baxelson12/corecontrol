@@ -4,6 +4,7 @@ import { FluentProvider, webDarkTheme, webLightTheme } from "@fluentui/react-com
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { match } from "ts-pattern";
 import { AppLayout } from "./layout/AppLayout";
+import { AppToaster } from "./components/AppToaster";
 import { deviceName } from "./utils/detection";
 import { useAppDispatch, useAppSelector } from "./store/hooks";
 import { themeToggled } from "./store/themeSlice";
@@ -14,6 +15,7 @@ import {
   curvesApplied,
   curvesReverted,
   savedProfilePushStarted,
+  selectApplyPhase,
   selectCurvesDirty,
 } from "./store/curvesSlice";
 import { fanStatusPolled, selectFanStats } from "./store/statusSlice";
@@ -37,6 +39,7 @@ function App(): ReactElement {
   const series = useAppSelector((state) => state.curves.edited);
   const curveSource = useAppSelector((state) => state.curves.source);
   const dirty = useAppSelector(selectCurvesDirty);
+  const applyPhase = useAppSelector(selectApplyPhase);
   const stats = useAppSelector(selectFanStats);
   const coolerFound = detection.state === "found";
 
@@ -71,7 +74,7 @@ function App(): ReactElement {
         theme={theme}
         stats={stats}
         series={series}
-        dirty={dirty && coolerFound}
+        dirty={dirty && coolerFound && applyPhase !== "verifying"}
         curveSource={curveSource}
         onToggleTheme={() => void dispatch(themeToggled())}
         onPointMove={(seriesIndex, pointIndex, point) =>
@@ -83,6 +86,7 @@ function App(): ReactElement {
         onMinimize={() => appWindow.minimize().catch(console.error)}
         onClose={() => appWindow.close().catch(console.error)}
       />
+      <AppToaster />
     </FluentProvider>
   );
 }

@@ -1,14 +1,53 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
+import { match } from "ts-pattern";
 import type { CurvePoint, CurveSeries, CurveSource } from "../components/types";
 import { DEFAULT_SERIES } from "../defaults";
-import { applyFanProfile, profileToSeries, seriesToProfile } from "../utils/profile";
+import {
+  applyFanProfile,
+  profileToSeries,
+  readFanProfile,
+  sameProfile,
+  seriesToProfile,
+} from "../utils/profile";
 import { saveFanProfile } from "../utils/settings";
 import { settingsLoadStarted } from "./settingsThunks";
 
 const SNAP = 5;
 const TEMP_MAX = 120;
 const DUTY_MAX = 100;
+
+/** How often the device is asked whether it runs the applied profile. */
+const VERIFY_INTERVAL_MS = 500;
+/** Read-back attempts before an apply counts as unconfirmed (~15 s). */
+const VERIFY_MAX_ATTEMPTS = 30;
+
+/** Where a profile write currently stands, driving the apply toast. */
+export type ApplyPhase =
+  /** No write in flight. */
+  | "idle"
+  /** Written; polling the device until it reports the new profile. */
+  | "verifying"
+  /** The device never confirmed the write; a retry is on offer. */
+  | "unconfirmed";
+
+/** How one profile write ended. */
+export type ApplyOutcome =
+  /** The device reported the new profile back. */
+  | { readonly result: "confirmed" }
+  /** The device accepted the write but never reported it back. */
+  | { readonly result: "unconfirmed" }
+  /** The write itself failed. */
+  | { readonly result: "rejected"; readonly message: string };
+
+/** How the startup push of the saved profile ended. */
+export type SavedPushOutcome =
+  /** The device accepted the saved profile. */
+  | { readonly result: "applied" }
+  /** Nothing to push: the shown curves did not come from saved settings. */
+  | { readonly result: "skipped" }
+  /** The device refused the saved profile. */
+  | { readonly result: "failed"; readonly message: string };
 
 interface CurvesState {
   /** Curves as currently edited on the chart. */
@@ -18,6 +57,8 @@ interface CurvesState {
   /** Whether `applied` was read from (or written to) the device, or is the
    * design fallback shown while no custom profile is running. */
   readonly source: CurveSource;
+  /** Where the in-flight profile write stands, if any. */
+  readonly applyPhase: ApplyPhase;
 }
 
 /** Identifies one dragged point and its new chart-domain position. */
@@ -30,39 +71,61 @@ export interface PointMove {
 /**
  * Pushes the saved profile to the cooler once one is open, so the app, not
  * the device, decides what runs. A no-op unless the shown curves came from
- * the saved settings. Fulfills with whether the device accepted them.
+ * the saved settings. Fulfills with how the push ended.
  */
 export const savedProfilePushStarted = createAsyncThunk<
-  boolean,
+  SavedPushOutcome,
   void,
   { state: { curves: CurvesState } }
 >("curves/pushSaved", async (_ignored, { getState }) => {
   const { applied, source } = getState().curves;
   if (source !== "saved") {
-    return false;
+    return { result: "skipped" };
   }
   const profile = seriesToProfile(applied);
-  return profile === null ? false : applyFanProfile(profile);
+  if (profile === null) {
+    return { result: "skipped" };
+  }
+  const written = await applyFanProfile(profile);
+  return written.accepted
+    ? { result: "applied" }
+    : { result: "failed", message: written.message };
 });
 
+/** Resolves after `ms` milliseconds. */
+async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 /**
- * Writes the given curves to the device and, when the device accepts them,
- * persists them as the saved profile for the next launch. Fulfills with
- * whether the device accepted them; the reducer only commits the curves as
- * applied on success.
+ * Writes the given curves to the device, then polls the device's read-back
+ * until it reports the new profile, confirming the write took effect. On
+ * confirmation the profile is persisted as the saved profile for the next
+ * launch. Gives up after `VERIFY_MAX_ATTEMPTS` polls (~15 s); the reducer only
+ * commits the curves as applied on confirmation.
  */
 export const curvesApplied = createAsyncThunk(
   "curves/apply",
-  async (series: readonly CurveSeries[]): Promise<boolean> => {
+  async (series: readonly CurveSeries[]): Promise<ApplyOutcome> => {
     const profile = seriesToProfile(series);
     if (profile === null) {
-      return false;
+      return { result: "rejected", message: "the chart is missing a curve" };
     }
-    const accepted = await applyFanProfile(profile);
-    if (accepted) {
-      await saveFanProfile(profile);
+    const written = await applyFanProfile(profile);
+    if (!written.accepted) {
+      return { result: "rejected", message: written.message };
     }
-    return accepted;
+    for (let attempt = 0; attempt < VERIFY_MAX_ATTEMPTS; attempt += 1) {
+      await sleep(VERIFY_INTERVAL_MS);
+      const running = await readFanProfile();
+      if (running !== null && sameProfile(running, profile)) {
+        await saveFanProfile(profile);
+        return { result: "confirmed" };
+      }
+    }
+    return { result: "unconfirmed" };
   },
 );
 
@@ -70,6 +133,7 @@ const initialState: CurvesState = {
   edited: DEFAULT_SERIES,
   applied: DEFAULT_SERIES,
   source: "defaults",
+  applyPhase: "idle",
 };
 
 /**
@@ -114,20 +178,38 @@ const curvesSlice = createSlice({
     reverted(state) {
       state.edited = state.applied;
     },
+    /** The user dismissed the unconfirmed-apply toast without retrying. */
+    applyDismissed(state) {
+      state.applyPhase = "idle";
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(settingsLoadStarted.fulfilled, (state, action): CurvesState => {
       const profile = action.payload.fanProfile;
       if (profile === null) return state;
       const series = profileToSeries(profile);
-      return { edited: series, applied: series, source: "saved" };
+      return { ...state, edited: series, applied: series, source: "saved" };
     });
     builder.addCase(savedProfilePushStarted.fulfilled, (state, action): CurvesState =>
-      action.payload ? { ...state, source: "device" } : state,
+      action.payload.result === "applied" ? { ...state, source: "device" } : state,
     );
-    builder.addCase(curvesApplied.fulfilled, (state, action): CurvesState => {
-      if (!action.payload) return state;
-      return { edited: state.edited, applied: action.meta.arg, source: "device" };
+    builder.addCase(curvesApplied.pending, (state) => {
+      state.applyPhase = "verifying";
+    });
+    builder.addCase(curvesApplied.fulfilled, (state, action): CurvesState =>
+      match(action.payload)
+        .with({ result: "confirmed" }, (): CurvesState => ({
+          ...state,
+          applied: action.meta.arg,
+          source: "device",
+          applyPhase: "idle",
+        }))
+        .with({ result: "unconfirmed" }, (): CurvesState => ({ ...state, applyPhase: "unconfirmed" }))
+        .with({ result: "rejected" }, (): CurvesState => ({ ...state, applyPhase: "idle" }))
+        .exhaustive(),
+    );
+    builder.addCase(curvesApplied.rejected, (state) => {
+      state.applyPhase = "idle";
     });
   },
 });
@@ -147,5 +229,14 @@ export function selectCurvesDirty(state: { readonly curves: CurvesState }): bool
   });
 }
 
-export const { pointMoved: curvePointMoved, reverted: curvesReverted } = curvesSlice.actions;
+/** Where the in-flight profile write stands, for the apply toast. */
+export function selectApplyPhase(state: { readonly curves: CurvesState }): ApplyPhase {
+  return state.curves.applyPhase;
+}
+
+export const {
+  pointMoved: curvePointMoved,
+  reverted: curvesReverted,
+  applyDismissed: applyRetryDismissed,
+} = curvesSlice.actions;
 export const curvesReducer = curvesSlice.reducer;
