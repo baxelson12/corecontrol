@@ -42,18 +42,19 @@ const _: () = assert!(
     "a model must have at least one radiator fan"
 );
 
-/// Returns every model this controller can drive, for display or logging.
-pub fn known_models() -> &'static [ModelSpec] {
+/// Returns every model this controller can drive. Backs
+/// [`crate::Cooler::known_models`], the public entry point.
+pub(crate) fn known_models() -> &'static [ModelSpec] {
     &KNOWN_MODELS
 }
 
 /// Enumerates the recognized models currently attached, creating a private
-/// HID context for the scan. An application calls this at startup to learn
-/// what is in the machine before opening anything.
+/// HID context for the scan. Backs [`crate::Cooler::scan`], the public entry
+/// point.
 ///
 /// # Errors
 /// Returns `ControllerError::Hid` when the HID context cannot be created.
-pub fn detect_attached() -> Result<Vec<ModelSpec>, ControllerError> {
+pub(crate) fn detect_attached() -> Result<Vec<ModelSpec>, ControllerError> {
     let api = HidApi::new()?;
     let attached: Vec<ModelSpec> = available_devices(&api).collect();
     debug_assert!(
@@ -64,9 +65,9 @@ pub fn detect_attached() -> Result<Vec<ModelSpec>, ControllerError> {
     Ok(attached)
 }
 
-/// Yields each recognized model currently attached, at most once per model.
-/// An application uses this to present a device list for the user to confirm.
-pub fn available_devices(api: &HidApi) -> impl Iterator<Item = ModelSpec> + '_ {
+/// Yields each recognized model currently attached, at most once per model,
+/// using a caller-provided HID context.
+pub(crate) fn available_devices(api: &HidApi) -> impl Iterator<Item = ModelSpec> + '_ {
     KNOWN_MODELS.iter().copied().filter(move |model| {
         api.device_list()
             .any(|info| info.vendor_id() == VENDOR_ID && info.product_id() == model.product_id)

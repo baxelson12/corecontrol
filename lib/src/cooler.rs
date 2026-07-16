@@ -37,8 +37,20 @@ pub struct Cooler {
 
 impl Cooler {
     /// Opens a specific model the caller has already chosen (typically after
-    /// presenting `available_devices` and having the user confirm).
-    pub fn open(api: &HidApi, spec: ModelSpec) -> Result<Cooler, ControllerError> {
+    /// presenting the result of [`Cooler::scan`] and having the user confirm).
+    /// Creates a private HID context for the connection.
+    ///
+    /// # Errors
+    /// Returns `ControllerError::Hid` when the HID context cannot be created
+    /// or the device cannot be opened.
+    pub fn open(spec: ModelSpec) -> Result<Cooler, ControllerError> {
+        let api = HidApi::new()?;
+
+        Cooler::open_with(&api, spec)
+    }
+
+    /// Opens `spec` through an existing HID context.
+    fn open_with(api: &HidApi, spec: ModelSpec) -> Result<Cooler, ControllerError> {
         assert!(spec.radiator_fans >= 1, "model must have a radiator fan");
         assert!(spec.product_id != 0, "model has no product id");
         let device = api.open(VENDOR_ID, spec.product_id)?;
@@ -56,6 +68,21 @@ impl Cooler {
         })
     }
 
+    /// Enumerates the recognized models currently attached, without opening
+    /// anything. An application calls this at startup to learn what is in the
+    /// machine, then passes the chosen spec to [`Cooler::open`].
+    ///
+    /// # Errors
+    /// Returns `ControllerError::Hid` when the HID context cannot be created.
+    pub fn scan() -> Result<Vec<ModelSpec>, ControllerError> {
+        crate::models::detect_attached()
+    }
+
+    /// Returns every model this controller can drive, for display or logging.
+    pub fn known_models() -> &'static [ModelSpec] {
+        crate::models::known_models()
+    }
+
     /// Convenience: detects and opens the first recognized Coreliquid.
     pub fn detect() -> Result<Cooler, ControllerError> {
         let api = HidApi::new()?;
@@ -68,7 +95,7 @@ impl Cooler {
         );
         assert!(spec.product_id != 0, "detected model has no product id");
 
-        Cooler::open(&api, spec)
+        Cooler::open_with(&api, spec)
     }
 
     /// Returns the detected model's spec, for display.
