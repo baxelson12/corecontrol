@@ -29,6 +29,11 @@ check-app:
 install:
     cd app && pnpm install
 
+# Type-check and lint the frontend (tsc + Biome).
+check-ui:
+    cd app && pnpm exec tsc --noEmit
+    cd app && pnpm lint
+
 # Run the app in development with hot reload.
 dev: install
     cd app && pnpm tauri dev

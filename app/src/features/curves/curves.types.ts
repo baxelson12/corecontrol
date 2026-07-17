@@ -15,30 +15,34 @@ export interface CurveSeries {
 }
 
 /** Reports a chart point being dragged to a new chart-domain position. */
-export type CurvePointMoveHandler = (seriesIndex: number, pointIndex: number, point: CurvePoint) => void;
+export type CurvePointMoveHandler = (
+  seriesIndex: number,
+  pointIndex: number,
+  point: CurvePoint,
+) => void;
 
 /**
  * Where the curves on the chart came from: confirmed on the device, loaded
  * from the saved settings but not yet confirmed on the device, or the
  * design-fallback defaults shown while no profile has ever been saved.
  */
-export type CurveSource = "device" | "saved" | "defaults";
+export type CurveSource = 'device' | 'saved' | 'defaults';
 
 /** Channel colors from the design. */
 export const SERIES_COLORS = {
-  radiatorFans: "oklch(0.68 0.14 235)",
-  unitFan: "oklch(0.68 0.14 155)",
-  pump: "oklch(0.68 0.14 330)",
+  radiatorFans: 'oklch(0.68 0.14 235)',
+  unitFan: 'oklch(0.68 0.14 155)',
+  pump: 'oklch(0.68 0.14 330)',
 } as const;
 
 /** Where a profile write currently stands, driving the apply toast. */
 export type ApplyPhase =
   /** No write in flight. */
-  | "idle"
+  | 'idle'
   /** Written; polling the device until it reports the new profile. */
-  | "verifying"
+  | 'verifying'
   /** The device never confirmed the write; a retry is on offer. */
-  | "unconfirmed";
+  | 'unconfirmed';
 
 export interface CurvesState {
   /** Curves as currently edited on the chart. */

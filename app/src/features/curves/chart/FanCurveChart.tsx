@@ -1,18 +1,18 @@
-import { makeStyles } from "@fluentui/react-components";
-import type { ReactElement } from "react";
-import type { CurvePointMoveHandler, CurveSeries } from "../curves.types";
-import { VIEW_WIDTH, VIEW_HEIGHT, DEFAULT_TEMP_MAX } from "./geometry";
-import { ChartGrid } from "./ChartGrid";
-import { ChartAxes } from "./ChartAxes";
-import { CurveSeriesLayer } from "./CurveSeriesLayer";
-import { CurveLabels } from "./CurveLabels";
+import { makeStyles } from '@fluentui/react-components';
+import type { ReactElement } from 'react';
+import type { CurvePointMoveHandler, CurveSeries } from '../curves.types';
+import { ChartAxes } from './ChartAxes';
+import { ChartGrid } from './ChartGrid';
+import { CurveLabels } from './CurveLabels';
+import { CurveSeriesLayer } from './CurveSeriesLayer';
+import { DEFAULT_TEMP_MAX, VIEW_HEIGHT, VIEW_WIDTH } from './geometry';
 
 const useStyles = makeStyles({
   svg: {
-    display: "block",
-    width: "100%",
-    touchAction: "none",
-    userSelect: "none",
+    display: 'block',
+    width: '100%',
+    touchAction: 'none',
+    userSelect: 'none',
   },
 });
 
@@ -47,7 +47,12 @@ export function FanCurveChart({
   const styles = useStyles();
   const safeTempMax = tempMax > 0 ? tempMax : DEFAULT_TEMP_MAX;
   return (
-    <svg viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`} className={styles.svg} role="img" aria-label="Fan curves">
+    <svg
+      viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
+      className={styles.svg}
+      role="img"
+      aria-label="Fan curves"
+    >
       {showGrid && <ChartGrid tempMax={safeTempMax} />}
       <ChartAxes tempMax={safeTempMax} />
       {series.map((s, i) => (

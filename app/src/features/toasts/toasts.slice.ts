@@ -1,11 +1,11 @@
-import { createSlice } from "@reduxjs/toolkit";
-import type { PayloadAction } from "@reduxjs/toolkit";
-import { match } from "ts-pattern";
-import { coolerScanStarted } from "../detection/detection.slice";
-import { curvesApplied, savedProfilePushStarted } from "../curves/curves.thunks";
+import type { PayloadAction } from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit';
+import { match } from 'ts-pattern';
+import { curvesApplied, savedProfilePushStarted } from '../curves/curves.thunks';
+import { coolerScanStarted } from '../detection/detection.slice';
 
 /** How a queued toast should read: a failure or a confirmation. */
-export type ToastKind = "error" | "success";
+export type ToastKind = 'error' | 'success';
 
 /** One notification waiting to be shown as a toast. */
 export interface ToastEntry {
@@ -41,7 +41,7 @@ function enqueue(state: ToastsState, kind: ToastKind, title: string, body: strin
  * until the toaster component reports them delivered.
  */
 const toastsSlice = createSlice({
-  name: "toasts",
+  name: 'toasts',
   initialState,
   reducers: {
     /** The toaster showed this entry; drop it from the queue. */
@@ -53,39 +53,48 @@ const toastsSlice = createSlice({
     restored(state): ToastsState {
       return enqueue(
         state,
-        "success",
-        "Fan profile restored",
-        "The cooler had drifted from the saved profile; it was pushed back.",
+        'success',
+        'Fan profile restored',
+        'The cooler had drifted from the saved profile; it was pushed back.',
       );
     },
   },
   extraReducers: (builder) => {
     builder.addCase(coolerScanStarted.fulfilled, (state, action): ToastsState => {
-      if (action.payload.state !== "failed") return state;
-      return enqueue(state, "error", "Cooler detection failed", action.payload.message);
+      if (action.payload.state !== 'failed') return state;
+      return enqueue(state, 'error', 'Cooler detection failed', action.payload.message);
     });
     builder.addCase(savedProfilePushStarted.fulfilled, (state, action): ToastsState => {
-      if (action.payload.result !== "failed") return state;
-      return enqueue(state, "error", "Saved profile not applied", action.payload.message);
+      if (action.payload.result !== 'failed') return state;
+      return enqueue(state, 'error', 'Saved profile not applied', action.payload.message);
     });
-    builder.addCase(curvesApplied.fulfilled, (state, action): ToastsState =>
-      match(action.payload)
-        .with({ result: "confirmed" }, () =>
-          enqueue(state, "success", "Fan profile applied", "The cooler confirmed the new profile."),
-        )
-        .with({ result: "rejected" }, ({ message }) =>
-          enqueue(state, "error", "Profile apply failed", message),
-        )
-        .with({ result: "unconfirmed" }, () => state)
-        .exhaustive(),
+    builder.addCase(
+      curvesApplied.fulfilled,
+      (state, action): ToastsState =>
+        match(action.payload)
+          .with({ result: 'confirmed' }, () =>
+            enqueue(
+              state,
+              'success',
+              'Fan profile applied',
+              'The cooler confirmed the new profile.',
+            ),
+          )
+          .with({ result: 'rejected' }, ({ message }) =>
+            enqueue(state, 'error', 'Profile apply failed', message),
+          )
+          .with({ result: 'unconfirmed' }, () => state)
+          .exhaustive(),
     );
-    builder.addCase(curvesApplied.rejected, (state, action): ToastsState =>
-      enqueue(
-        state,
-        "error",
-        "Profile apply failed",
-        action.error.message ?? "the apply did not complete",
-      ),
+    builder.addCase(
+      curvesApplied.rejected,
+      (state, action): ToastsState =>
+        enqueue(
+          state,
+          'error',
+          'Profile apply failed',
+          action.error.message ?? 'the apply did not complete',
+        ),
     );
   },
 });

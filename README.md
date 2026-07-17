@@ -47,6 +47,7 @@ tray (no taskbar entry); the close button exits the app, tray icon included.
 
 ```
 just check          # fmt + clippy + test the library
+just check-ui       # type-check + lint the frontend (tsc + Biome)
 just dev            # run the app with hot reload
 just win            # build the Windows exe + installers (run on Windows)
 just win-exe        # cross-compile just the Windows exe from Linux

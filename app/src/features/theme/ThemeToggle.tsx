@@ -1,13 +1,21 @@
-import { Button } from "@fluentui/react-components";
-import { useId } from "react";
-import type { ReactElement } from "react";
-import { match } from "ts-pattern";
-import type { ThemeName } from "./theme.types";
+import { Button } from '@fluentui/react-components';
+import type { ReactElement } from 'react';
+import { useId } from 'react';
+import { match } from 'ts-pattern';
+import type { ThemeName } from './theme.types';
 
 /** Sun glyph, shown in dark mode to offer switching to light. */
 function SunIcon(): ReactElement {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+    >
       <circle cx="8" cy="8" r="3.4" />
       <line x1="8" y1="0.7" x2="8" y2="2.4" />
       <line x1="8" y1="13.6" x2="8" y2="15.3" />
@@ -46,8 +54,8 @@ export interface ThemeToggleProps {
  */
 export function ThemeToggle({ theme, onToggle }: ThemeToggleProps): ReactElement {
   const icon = match(theme)
-    .with("dark", () => <SunIcon />)
-    .with("light", () => <MoonIcon />)
+    .with('dark', () => <SunIcon />)
+    .with('light', () => <MoonIcon />)
     .exhaustive();
   return (
     <Button

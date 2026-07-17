@@ -1,7 +1,7 @@
-import type { ReactElement } from "react";
-import type { CurvePointMoveHandler, CurveSeries } from "../curves.types";
-import { PLOT_LEFT, PLOT_RIGHT, PLOT_BOTTOM, linePath } from "./geometry";
-import { CurvePointHandle } from "./CurvePointHandle";
+import type { ReactElement } from 'react';
+import type { CurvePointMoveHandler, CurveSeries } from '../curves.types';
+import { CurvePointHandle } from './CurvePointHandle';
+import { linePath, PLOT_BOTTOM, PLOT_LEFT, PLOT_RIGHT } from './geometry';
 
 export interface CurveSeriesLayerProps {
   readonly series: CurveSeries;
@@ -27,7 +27,11 @@ export function CurveSeriesLayer({
   return (
     <g>
       {showFill && (
-        <path d={`${d} L${PLOT_RIGHT} ${PLOT_BOTTOM} L${PLOT_LEFT} ${PLOT_BOTTOM} Z`} fill={series.color} opacity={0.07} />
+        <path
+          d={`${d} L${PLOT_RIGHT} ${PLOT_BOTTOM} L${PLOT_LEFT} ${PLOT_BOTTOM} Z`}
+          fill={series.color}
+          opacity={0.07}
+        />
       )}
       <path d={d} fill="none" stroke={series.color} strokeWidth={2} strokeLinejoin="round" />
       {series.points.map((pt, pointIndex) => (

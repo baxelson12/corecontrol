@@ -1,16 +1,16 @@
-import { Caption1, Subtitle1, makeStyles, tokens } from "@fluentui/react-components";
-import type { ReactElement } from "react";
+import { Caption1, makeStyles, Subtitle1, tokens } from '@fluentui/react-components';
+import type { ReactElement } from 'react';
 
 const useStyles = makeStyles({
   eyebrow: {
-    display: "block",
-    textTransform: "uppercase",
-    letterSpacing: "0.08em",
+    display: 'block',
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
     color: tokens.colorNeutralForeground4,
   },
   name: {
-    display: "block",
-    marginTop: "2px",
+    display: 'block',
+    marginTop: '2px',
   },
 });
 

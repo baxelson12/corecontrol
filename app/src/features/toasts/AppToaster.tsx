@@ -1,26 +1,26 @@
-import { useEffect, useRef } from "react";
-import type { ReactElement } from "react";
 import {
   Button,
   Spinner,
   Toast,
   ToastBody,
+  Toaster,
   ToastFooter,
   ToastTitle,
-  Toaster,
   useId,
   useToastController,
-} from "@fluentui/react-components";
-import { match } from "ts-pattern";
-import { useAppDispatch, useAppSelector } from "../../store/hooks";
-import { applyRetryDismissed } from "../curves/curves.slice";
-import { curvesApplied } from "../curves/curves.thunks";
-import { selectApplyPhase } from "../curves/curves.selectors";
-import type { ApplyPhase } from "../curves/curves.types";
-import { toastDelivered } from "./toasts.slice";
+} from '@fluentui/react-components';
+import type { ReactElement } from 'react';
+import { useEffect, useRef } from 'react';
+import { match } from 'ts-pattern';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { selectApplyPhase } from '../curves/curves.selectors';
+import { applyRetryDismissed } from '../curves/curves.slice';
+import { curvesApplied } from '../curves/curves.thunks';
+import type { ApplyPhase } from '../curves/curves.types';
+import { toastDelivered } from './toasts.slice';
 
 /** Toast id of the single apply-progress toast, so it can be updated. */
-const APPLY_TOAST_ID = "apply-progress";
+const APPLY_TOAST_ID = 'apply-progress';
 /** How long an error toast stays up, in milliseconds. */
 const ERROR_TIMEOUT_MS = 8000;
 /** How long a success toast stays up, in milliseconds. */
@@ -60,13 +60,13 @@ function unconfirmedToast(onRetry: () => void, onDismiss: () => void): ReactElem
  * (spinner while the device confirms, retry offer when it never does).
  */
 export function AppToaster(): ReactElement {
-  const toasterId = useId("app-toaster");
+  const toasterId = useId('app-toaster');
   const { dispatchToast, updateToast, dismissToast } = useToastController(toasterId);
   const dispatch = useAppDispatch();
   const queue = useAppSelector((state) => state.toasts.queue);
   const applyPhase = useAppSelector(selectApplyPhase);
   const edited = useAppSelector((state) => state.curves.edited);
-  const previousPhase = useRef<ApplyPhase>("idle");
+  const previousPhase = useRef<ApplyPhase>('idle');
 
   useEffect(() => {
     for (const entry of queue) {
@@ -77,7 +77,7 @@ export function AppToaster(): ReactElement {
         </Toast>,
         {
           intent: entry.kind,
-          timeout: entry.kind === "error" ? ERROR_TIMEOUT_MS : SUCCESS_TIMEOUT_MS,
+          timeout: entry.kind === 'error' ? ERROR_TIMEOUT_MS : SUCCESS_TIMEOUT_MS,
         },
       );
       dispatch(toastDelivered(entry.key));
@@ -93,22 +93,22 @@ export function AppToaster(): ReactElement {
     const retry = (): void => void dispatch(curvesApplied(edited));
     const dismiss = (): void => void dispatch(applyRetryDismissed());
     match(applyPhase)
-      .with("idle", () => {
+      .with('idle', () => {
         dismissToast(APPLY_TOAST_ID);
       })
-      .with("verifying", () => {
-        const options = { toastId: APPLY_TOAST_ID, intent: "info", timeout: -1 } as const;
-        if (before === "unconfirmed") {
+      .with('verifying', () => {
+        const options = { toastId: APPLY_TOAST_ID, intent: 'info', timeout: -1 } as const;
+        if (before === 'unconfirmed') {
           updateToast({ ...options, content: applyingToast() });
         } else {
           dispatchToast(applyingToast(), options);
         }
       })
-      .with("unconfirmed", () => {
+      .with('unconfirmed', () => {
         updateToast({
           toastId: APPLY_TOAST_ID,
           content: unconfirmedToast(retry, dismiss),
-          intent: "warning",
+          intent: 'warning',
           timeout: -1,
         });
       })

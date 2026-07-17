@@ -1,8 +1,8 @@
-import { invoke } from "@tauri-apps/api/core";
-import { match, P } from "ts-pattern";
-import type { ThemeName } from "../theme/theme.types";
-import { parseProfile } from "../curves/profile";
-import type { FanProfile } from "../curves/profile";
+import { invoke } from '@tauri-apps/api/core';
+import { match, P } from 'ts-pattern';
+import type { FanProfile } from '../curves/profile';
+import { parseProfile } from '../curves/profile';
+import type { ThemeName } from '../theme/theme.types';
 
 /** Settings persisted across launches, as exchanged with the backend. */
 export interface AppSettings {
@@ -23,10 +23,10 @@ const EMPTY_SETTINGS: AppSettings = { theme: null, fanProfile: null };
  */
 export async function loadSettings(): Promise<AppSettings> {
   try {
-    const reply: unknown = await invoke("load_settings");
+    const reply: unknown = await invoke('load_settings');
     return match<unknown, AppSettings>(reply)
       .with(
-        { theme: P.union("light", "dark", P.nullish), fanProfile: P._ },
+        { theme: P.union('light', 'dark', P.nullish), fanProfile: P._ },
         ({ theme, fanProfile }) => ({
           theme: theme ?? null,
           fanProfile: parseProfile(fanProfile),
@@ -34,7 +34,7 @@ export async function loadSettings(): Promise<AppSettings> {
       )
       .otherwise(() => EMPTY_SETTINGS);
   } catch (error) {
-    console.error("settings load failed:", error);
+    console.error('settings load failed:', error);
     return EMPTY_SETTINGS;
   }
 }
@@ -46,9 +46,9 @@ export async function loadSettings(): Promise<AppSettings> {
  */
 export async function saveTheme(theme: ThemeName): Promise<void> {
   try {
-    await invoke("save_theme", { theme });
+    await invoke('save_theme', { theme });
   } catch (error) {
-    console.error("theme save failed:", error);
+    console.error('theme save failed:', error);
   }
 }
 
@@ -59,8 +59,8 @@ export async function saveTheme(theme: ThemeName): Promise<void> {
  */
 export async function saveFanProfile(profile: FanProfile): Promise<void> {
   try {
-    await invoke("save_fan_profile", { profile });
+    await invoke('save_fan_profile', { profile });
   } catch (error) {
-    console.error("profile save failed:", error);
+    console.error('profile save failed:', error);
   }
 }

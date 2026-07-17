@@ -1,6 +1,6 @@
-import { match, P } from "ts-pattern";
-import { SERIES_COLORS } from "./curves.types";
-import type { CurvePoint, CurveSeries } from "./curves.types";
+import { match, P } from 'ts-pattern';
+import type { CurvePoint, CurveSeries } from './curves.types';
+import { SERIES_COLORS } from './curves.types';
 
 /** A fan profile as exchanged with the backend: one curve per channel. */
 export interface FanProfile {
@@ -68,9 +68,9 @@ export function sameProfile(a: FanProfile, b: FanProfile): boolean {
 
 /** The three profile channels in display order, with their chart styling. */
 const CHANNELS = [
-  { key: "radiators", name: "Radiator fans", color: SERIES_COLORS.radiatorFans },
-  { key: "waterblock", name: "Unit fan", color: SERIES_COLORS.unitFan },
-  { key: "pump", name: "Pump", color: SERIES_COLORS.pump },
+  { key: 'radiators', name: 'Radiator fans', color: SERIES_COLORS.radiatorFans },
+  { key: 'waterblock', name: 'Unit fan', color: SERIES_COLORS.unitFan },
+  { key: 'pump', name: 'Pump', color: SERIES_COLORS.pump },
 ] as const;
 
 /** Maps a backend profile to the three chart series, in display order. */

@@ -1,51 +1,55 @@
-import { makeStyles, tokens } from "@fluentui/react-components";
-import type { ReactElement } from "react";
-import { match } from "ts-pattern";
-import { TitleBar } from "../components/TitleBar";
-import { DeviceHeader } from "../components/DeviceHeader";
-import { UnsavedChangesPill } from "../components/UnsavedChangesPill";
-import { ThemeToggle } from "../features/theme/ThemeToggle";
-import type { ThemeName } from "../features/theme/theme.types";
-import { StatCard } from "../features/status/StatCard";
-import type { StatCardProps } from "../features/status/StatCard";
-import { FanCurveCard } from "../features/curves/FanCurveCard";
-import type { CurvePointMoveHandler, CurveSeries, CurveSource } from "../features/curves/curves.types";
+import { makeStyles, tokens } from '@fluentui/react-components';
+import type { ReactElement } from 'react';
+import { match } from 'ts-pattern';
+import { DeviceHeader } from '../components/DeviceHeader';
+import { TitleBar } from '../components/TitleBar';
+import { UnsavedChangesPill } from '../components/UnsavedChangesPill';
+import type {
+  CurvePointMoveHandler,
+  CurveSeries,
+  CurveSource,
+} from '../features/curves/curves.types';
+import { FanCurveCard } from '../features/curves/FanCurveCard';
+import type { StatCardProps } from '../features/status/StatCard';
+import { StatCard } from '../features/status/StatCard';
+import { ThemeToggle } from '../features/theme/ThemeToggle';
+import type { ThemeName } from '../features/theme/theme.types';
 
 const useStyles = makeStyles({
   root: {
-    display: "flex",
-    flexDirection: "column",
-    height: "100vh",
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100vh',
     backgroundColor: tokens.colorNeutralBackground2,
   },
   main: {
     flexGrow: 1,
-    overflowY: "auto",
-    width: "100%",
-    maxWidth: "908px",
-    margin: "0 auto",
-    padding: "20px 24px 24px",
-    boxSizing: "border-box",
-    display: "flex",
-    flexDirection: "column",
-    gap: "16px",
+    overflowY: 'auto',
+    width: '100%',
+    maxWidth: '908px',
+    margin: '0 auto',
+    padding: '20px 24px 24px',
+    boxSizing: 'border-box',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
   },
   headerRow: {
-    display: "flex",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    gap: "16px",
+    display: 'flex',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    gap: '16px',
   },
   statsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: "12px",
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '12px',
   },
   pillRow: {
-    position: "fixed",
-    bottom: "16px",
-    left: "50%",
-    transform: "translateX(-50%)",
+    position: 'fixed',
+    bottom: '16px',
+    left: '50%',
+    transform: 'translateX(-50%)',
     zIndex: 10,
   },
 });
@@ -85,9 +89,9 @@ export interface AppLayoutProps {
 export function AppLayout(props: AppLayoutProps): ReactElement {
   const styles = useStyles();
   const pillMessage = match(props.curveSource)
-    .with("defaults", () => "No saved profile yet")
-    .with("saved", () => "Saved profile not applied")
-    .with("device", () => "Unsaved changes")
+    .with('defaults', () => 'No saved profile yet')
+    .with('saved', () => 'Saved profile not applied')
+    .with('device', () => 'Unsaved changes')
     .exhaustive();
   return (
     <div className={styles.root}>
@@ -118,7 +122,7 @@ export function AppLayout(props: AppLayoutProps): ReactElement {
           <div className={styles.pillRow}>
             <UnsavedChangesPill
               message={pillMessage}
-              revertDisabled={props.curveSource === "defaults"}
+              revertDisabled={props.curveSource === 'defaults'}
               onRevert={props.onRevert}
               onApply={props.onApply}
             />

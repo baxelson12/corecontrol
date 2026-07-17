@@ -1,5 +1,5 @@
-import { invoke } from "@tauri-apps/api/core";
-import { match, P } from "ts-pattern";
+import { invoke } from '@tauri-apps/api/core';
+import { match, P } from 'ts-pattern';
 
 /** Live speed and duty readings for the three cooling channels. */
 export interface FanReadings {
@@ -34,12 +34,12 @@ const readingsPattern = P.shape({
  */
 export async function readFanStatus(): Promise<FanReadings | null> {
   try {
-    const reply: unknown = await invoke("fan_status");
+    const reply: unknown = await invoke('fan_status');
     return match<unknown, FanReadings | null>(reply)
       .with(readingsPattern, (readings) => readings)
       .otherwise(() => null);
   } catch (error) {
-    console.error("fan status read failed:", error);
+    console.error('fan status read failed:', error);
     return null;
   }
 }

@@ -1,11 +1,11 @@
-import { createSlice } from "@reduxjs/toolkit";
-import type { PayloadAction } from "@reduxjs/toolkit";
-import { match } from "ts-pattern";
-import type { CurvePoint, CurveSeries, CurvesState, PointMove } from "./curves.types";
-import { DEFAULT_SERIES } from "./curves.defaults";
-import { profileToSeries } from "./profile";
-import { curvesApplied, savedProfilePushStarted } from "./curves.thunks";
-import { settingsLoadStarted } from "../settings/settings.thunks";
+import type { PayloadAction } from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit';
+import { match } from 'ts-pattern';
+import { settingsLoadStarted } from '../settings/settings.thunks';
+import { DEFAULT_SERIES } from './curves.defaults';
+import { curvesApplied, savedProfilePushStarted } from './curves.thunks';
+import type { CurvePoint, CurveSeries, CurvesState, PointMove } from './curves.types';
+import { profileToSeries } from './profile';
 
 const SNAP = 5;
 const TEMP_MAX = 120;
@@ -14,8 +14,8 @@ const DUTY_MAX = 100;
 const initialState: CurvesState = {
   edited: DEFAULT_SERIES,
   applied: DEFAULT_SERIES,
-  source: "defaults",
-  applyPhase: "idle",
+  source: 'defaults',
+  applyPhase: 'idle',
 };
 
 /**
@@ -35,12 +35,14 @@ function movePoint(series: readonly CurveSeries[], move: PointMove): readonly Cu
     duty: Math.min(DUTY_MAX, Math.max(0, Math.round(point.duty / SNAP) * SNAP)),
   };
   return series.map((s, i) =>
-    i === seriesIndex ? { ...s, points: s.points.map((p, j) => (j === pointIndex ? moved : p)) } : s,
+    i === seriesIndex
+      ? { ...s, points: s.points.map((p, j) => (j === pointIndex ? moved : p)) }
+      : s,
   );
 }
 
 const curvesSlice = createSlice({
-  name: "curves",
+  name: 'curves',
   initialState,
   reducers: {
     /** A chart point was dragged to a new position. */
@@ -53,7 +55,7 @@ const curvesSlice = createSlice({
     },
     /** The user dismissed the unconfirmed-apply toast without retrying. */
     applyDismissed(state) {
-      state.applyPhase = "idle";
+      state.applyPhase = 'idle';
     },
   },
   extraReducers: (builder) => {
@@ -61,28 +63,38 @@ const curvesSlice = createSlice({
       const profile = action.payload.fanProfile;
       if (profile === null) return state;
       const series = profileToSeries(profile);
-      return { ...state, edited: series, applied: series, source: "saved" };
+      return { ...state, edited: series, applied: series, source: 'saved' };
     });
-    builder.addCase(savedProfilePushStarted.fulfilled, (state, action): CurvesState =>
-      action.payload.result === "applied" ? { ...state, source: "device" } : state,
+    builder.addCase(
+      savedProfilePushStarted.fulfilled,
+      (state, action): CurvesState =>
+        action.payload.result === 'applied' ? { ...state, source: 'device' } : state,
     );
     builder.addCase(curvesApplied.pending, (state) => {
-      state.applyPhase = "verifying";
+      state.applyPhase = 'verifying';
     });
-    builder.addCase(curvesApplied.fulfilled, (state, action): CurvesState =>
-      match(action.payload)
-        .with({ result: "confirmed" }, (): CurvesState => ({
-          ...state,
-          applied: action.meta.arg,
-          source: "device",
-          applyPhase: "idle",
-        }))
-        .with({ result: "unconfirmed" }, (): CurvesState => ({ ...state, applyPhase: "unconfirmed" }))
-        .with({ result: "rejected" }, (): CurvesState => ({ ...state, applyPhase: "idle" }))
-        .exhaustive(),
+    builder.addCase(
+      curvesApplied.fulfilled,
+      (state, action): CurvesState =>
+        match(action.payload)
+          .with(
+            { result: 'confirmed' },
+            (): CurvesState => ({
+              ...state,
+              applied: action.meta.arg,
+              source: 'device',
+              applyPhase: 'idle',
+            }),
+          )
+          .with(
+            { result: 'unconfirmed' },
+            (): CurvesState => ({ ...state, applyPhase: 'unconfirmed' }),
+          )
+          .with({ result: 'rejected' }, (): CurvesState => ({ ...state, applyPhase: 'idle' }))
+          .exhaustive(),
     );
     builder.addCase(curvesApplied.rejected, (state) => {
-      state.applyPhase = "idle";
+      state.applyPhase = 'idle';
     });
   },
 });

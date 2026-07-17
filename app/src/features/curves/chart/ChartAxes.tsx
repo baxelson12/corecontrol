@@ -1,13 +1,21 @@
-import { makeStyles, tokens } from "@fluentui/react-components";
-import type { ReactElement } from "react";
-import { DUTY_MAX, PLOT_LEFT, PLOT_RIGHT, PLOT_TOP, PLOT_BOTTOM, tempToX, dutyToY } from "./geometry";
+import { makeStyles, tokens } from '@fluentui/react-components';
+import type { ReactElement } from 'react';
+import {
+  DUTY_MAX,
+  dutyToY,
+  PLOT_BOTTOM,
+  PLOT_LEFT,
+  PLOT_RIGHT,
+  PLOT_TOP,
+  tempToX,
+} from './geometry';
 
 /** Spacing of labeled ticks on both axes: every other 5-unit grid line. */
 const TICK_STEP = 10;
 
 const useStyles = makeStyles({
   tickLabel: {
-    fontSize: "10px",
+    fontSize: '10px',
     fill: tokens.colorNeutralForeground4,
   },
 });
@@ -31,16 +39,40 @@ export function ChartAxes({ tempMax }: { readonly tempMax: number }): ReactEleme
   const styles = useStyles();
   return (
     <g>
-      <line x1={PLOT_LEFT} y1={PLOT_BOTTOM} x2={PLOT_RIGHT} y2={PLOT_BOTTOM} stroke={tokens.colorNeutralStroke2} />
-      <line x1={PLOT_LEFT} y1={PLOT_TOP} x2={PLOT_LEFT} y2={PLOT_BOTTOM} stroke={tokens.colorNeutralStroke2} />
+      <line
+        x1={PLOT_LEFT}
+        y1={PLOT_BOTTOM}
+        x2={PLOT_RIGHT}
+        y2={PLOT_BOTTOM}
+        stroke={tokens.colorNeutralStroke2}
+      />
+      <line
+        x1={PLOT_LEFT}
+        y1={PLOT_TOP}
+        x2={PLOT_LEFT}
+        y2={PLOT_BOTTOM}
+        stroke={tokens.colorNeutralStroke2}
+      />
       {ticks(tempMax).map((t) => (
-        <text key={t} className={styles.tickLabel} x={tempToX(t, tempMax)} y={PLOT_BOTTOM + 18} textAnchor="middle">
-          {tickText(t, tempMax, "°C")}
+        <text
+          key={t}
+          className={styles.tickLabel}
+          x={tempToX(t, tempMax)}
+          y={PLOT_BOTTOM + 18}
+          textAnchor="middle"
+        >
+          {tickText(t, tempMax, '°C')}
         </text>
       ))}
       {ticks(DUTY_MAX).map((d) => (
-        <text key={d} className={styles.tickLabel} x={PLOT_LEFT - 8} y={dutyToY(d) + 3} textAnchor="end">
-          {tickText(d, DUTY_MAX, "%")}
+        <text
+          key={d}
+          className={styles.tickLabel}
+          x={PLOT_LEFT - 8}
+          y={dutyToY(d) + 3}
+          textAnchor="end"
+        >
+          {tickText(d, DUTY_MAX, '%')}
         </text>
       ))}
     </g>

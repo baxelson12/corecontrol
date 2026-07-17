@@ -1,8 +1,8 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import type { StatCardProps } from "./StatCard";
-import { SERIES_COLORS } from "../curves/curves.types";
-import { readFanStatus } from "./status.ipc";
-import type { FanReadings } from "./status.ipc";
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import { SERIES_COLORS } from '../curves/curves.types';
+import type { StatCardProps } from './StatCard';
+import type { FanReadings } from './status.ipc';
+import { readFanStatus } from './status.ipc';
 
 /** Live cooler readings: the last good status report, if any. */
 interface StatusState {
@@ -15,12 +15,12 @@ interface StatusState {
  * Polls the backend for one status report. `readFanStatus` folds its own
  * failures into `null`, so this thunk always fulfills.
  */
-export const fanStatusPolled = createAsyncThunk("status/poll", readFanStatus);
+export const fanStatusPolled = createAsyncThunk('status/poll', readFanStatus);
 
 const initialState: StatusState = { readings: null };
 
 const statusSlice = createSlice({
-  name: "status",
+  name: 'status',
   initialState,
   reducers: {},
   extraReducers: (builder) => {
@@ -40,19 +40,19 @@ export function selectFanStats(state: { readonly status: StatusState }): readonl
   const readings = state.status.readings;
   return [
     {
-      label: "Radiator fans",
+      label: 'Radiator fans',
       color: SERIES_COLORS.radiatorFans,
       rpm: readings === null ? null : readings.radiatorRpm,
       dutyPct: readings === null ? null : readings.radiatorDuty,
     },
     {
-      label: "Unit fan",
+      label: 'Unit fan',
       color: SERIES_COLORS.unitFan,
       rpm: readings === null ? null : readings.waterblockRpm,
       dutyPct: readings === null ? null : readings.waterblockDuty,
     },
     {
-      label: "Pump",
+      label: 'Pump',
       color: SERIES_COLORS.pump,
       rpm: readings === null ? null : readings.pumpRpm,
       dutyPct: readings === null ? null : readings.pumpDuty,

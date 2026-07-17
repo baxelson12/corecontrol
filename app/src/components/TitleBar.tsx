@@ -1,18 +1,18 @@
-import { Caption1, makeStyles, tokens } from "@fluentui/react-components";
-import type { MouseEvent, ReactElement } from "react";
+import { Caption1, makeStyles, tokens } from '@fluentui/react-components';
+import type { MouseEvent, ReactElement } from 'react';
 
 const useStyles = makeStyles({
   root: {
-    height: "40px",
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    paddingLeft: "16px",
+    height: '40px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    paddingLeft: '16px',
     borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
   },
   appMark: {
-    width: "14px",
-    height: "14px",
+    width: '14px',
+    height: '14px',
     borderRadius: tokens.borderRadiusMedium,
     backgroundColor: tokens.colorBrandBackground,
   },
@@ -21,27 +21,27 @@ const useStyles = makeStyles({
     color: tokens.colorNeutralForeground3,
   },
   buttons: {
-    display: "flex",
-    alignSelf: "stretch",
+    display: 'flex',
+    alignSelf: 'stretch',
   },
   captionButton: {
-    width: "44px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "0",
-    border: "none",
-    backgroundColor: "transparent",
+    width: '44px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '0',
+    border: 'none',
+    backgroundColor: 'transparent',
     color: tokens.colorNeutralForeground3,
-    cursor: "pointer",
-    ":hover": {
+    cursor: 'pointer',
+    ':hover': {
       backgroundColor: tokens.colorSubtleBackgroundHover,
     },
   },
   closeButton: {
-    ":hover": {
-      backgroundColor: "#c42b1c",
-      color: "#ffffff",
+    ':hover': {
+      backgroundColor: '#c42b1c',
+      color: '#ffffff',
     },
   },
 });
@@ -64,7 +64,7 @@ export function TitleBar({ title, onDragStart, onMinimize, onClose }: TitleBarPr
 
   function handleMouseDown(event: MouseEvent<HTMLElement>): void {
     if (event.button !== 0) return;
-    if ((event.target as HTMLElement).closest("button")) return;
+    if ((event.target as HTMLElement).closest('button')) return;
     onDragStart();
   }
 
@@ -73,7 +73,12 @@ export function TitleBar({ title, onDragStart, onMinimize, onClose }: TitleBarPr
       <span className={styles.appMark} />
       <Caption1 className={styles.title}>{title}</Caption1>
       <div className={styles.buttons}>
-        <button type="button" className={styles.captionButton} aria-label="Minimize" onClick={onMinimize}>
+        <button
+          type="button"
+          className={styles.captionButton}
+          aria-label="Minimize"
+          onClick={onMinimize}
+        >
           <svg width="10" height="10" viewBox="0 0 10 10">
             <line x1="0" y1="5" x2="10" y2="5" stroke="currentColor" />
           </svg>

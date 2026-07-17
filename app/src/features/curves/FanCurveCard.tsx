@@ -1,20 +1,20 @@
-import { Body1Strong, Caption1, makeStyles, tokens } from "@fluentui/react-components";
-import type { ReactElement } from "react";
-import { FanCurveChart } from "./chart/FanCurveChart";
-import type { CurvePointMoveHandler, CurveSeries } from "./curves.types";
+import { Body1Strong, Caption1, makeStyles, tokens } from '@fluentui/react-components';
+import type { ReactElement } from 'react';
+import { FanCurveChart } from './chart/FanCurveChart';
+import type { CurvePointMoveHandler, CurveSeries } from './curves.types';
 
 const useStyles = makeStyles({
   root: {
     backgroundColor: tokens.colorNeutralBackground1,
     border: `1px solid ${tokens.colorNeutralStroke2}`,
     borderRadius: tokens.borderRadiusXLarge,
-    padding: "16px 16px 8px",
+    padding: '16px 16px 8px',
   },
   header: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "0 4px 6px",
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '0 4px 6px',
   },
   hint: {
     color: tokens.colorNeutralForeground4,

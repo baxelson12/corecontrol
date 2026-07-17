@@ -1,4 +1,4 @@
-import type { CurvePoint } from "../curves.types";
+import type { CurvePoint } from '../curves.types';
 
 export const VIEW_WIDTH = 620;
 export const VIEW_HEIGHT = 300;
@@ -37,7 +37,7 @@ export function linePath(points: readonly CurvePoint[], tempMax: number): string
   }));
   const first = px[0];
   const last = px[px.length - 1];
-  if (first === undefined || last === undefined) return "";
-  const segments = px.map((p) => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" L");
+  if (first === undefined || last === undefined) return '';
+  const segments = px.map((p) => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' L');
   return `M${PLOT_LEFT} ${first.y.toFixed(1)} L${segments} L${PLOT_RIGHT} ${last.y.toFixed(1)}`;
 }

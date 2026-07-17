@@ -1,7 +1,7 @@
-import { makeStyles, tokens } from "@fluentui/react-components";
-import type { ReactElement } from "react";
-import type { CurveSeries } from "../curves.types";
-import { DUTY_MAX, PLOT_BOTTOM, PLOT_LEFT, clamp, dutyToY } from "./geometry";
+import { makeStyles, tokens } from '@fluentui/react-components';
+import type { ReactElement } from 'react';
+import type { CurveSeries } from '../curves.types';
+import { clamp, DUTY_MAX, dutyToY, PLOT_BOTTOM, PLOT_LEFT } from './geometry';
 
 /** Vertical space one label row needs, in viewBox units. */
 const LABEL_GAP = 16;
@@ -18,12 +18,12 @@ const LABEL_CEILING = 8;
 
 const useStyles = makeStyles({
   label: {
-    fontSize: "11px",
+    fontSize: '11px',
     fontWeight: 600,
     fill: tokens.colorNeutralForeground2,
     stroke: tokens.colorNeutralBackground1,
-    strokeWidth: "3px",
-    paintOrder: "stroke",
+    strokeWidth: '3px',
+    paintOrder: 'stroke',
   },
 });
 
@@ -91,7 +91,12 @@ export function CurveLabels({ series }: { readonly series: readonly CurveSeries[
             strokeWidth={3}
             strokeLinecap="round"
           />
-          <text className={styles.label} x={LABEL_X + SWATCH_LENGTH + 6} y={label.y} dominantBaseline="central">
+          <text
+            className={styles.label}
+            x={LABEL_X + SWATCH_LENGTH + 6}
+            y={label.y}
+            dominantBaseline="central"
+          >
             {label.name}
           </text>
         </g>

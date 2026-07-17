@@ -1,4 +1,4 @@
-import type { ApplyPhase, CurveSeries, CurvesState } from "./curves.types";
+import type { ApplyPhase, CurveSeries, CurvesState } from './curves.types';
 
 /** Whether two series match in name, color, and every point. */
 function sameSeries(a: CurveSeries, b: CurveSeries): boolean {
@@ -16,7 +16,7 @@ function sameSeries(a: CurveSeries, b: CurveSeries): boolean {
  */
 export function selectCurvesDirty(state: { readonly curves: CurvesState }): boolean {
   const { edited, applied, source } = state.curves;
-  if (source !== "device") return true;
+  if (source !== 'device') return true;
   if (edited.length !== applied.length) return true;
   return !edited.every((s, i) => {
     const t = applied[i];

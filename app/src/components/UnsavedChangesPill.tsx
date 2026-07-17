@@ -1,12 +1,12 @@
-import { Button, Caption1, makeStyles, tokens } from "@fluentui/react-components";
-import type { ReactElement } from "react";
+import { Button, Caption1, makeStyles, tokens } from '@fluentui/react-components';
+import type { ReactElement } from 'react';
 
 const useStyles = makeStyles({
   root: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    padding: "8px 10px 8px 16px",
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '8px 10px 8px 16px',
     backgroundColor: tokens.colorNeutralBackground1,
     border: `1px solid ${tokens.colorNeutralStroke2}`,
     borderRadius: tokens.borderRadiusXLarge,
@@ -14,7 +14,7 @@ const useStyles = makeStyles({
   },
   message: {
     color: tokens.colorNeutralForeground3,
-    whiteSpace: "nowrap",
+    whiteSpace: 'nowrap',
   },
 });
 
@@ -32,7 +32,7 @@ export interface UnsavedChangesPillProps {
  * The layout keeps it below the chart, at the bottom of the window.
  */
 export function UnsavedChangesPill({
-  message = "Unsaved changes",
+  message = 'Unsaved changes',
   revertDisabled = false,
   onRevert,
   onApply,

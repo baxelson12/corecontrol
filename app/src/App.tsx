@@ -1,21 +1,21 @@
-import { useEffect } from "react";
-import type { ReactElement } from "react";
-import { FluentProvider, webDarkTheme, webLightTheme } from "@fluentui/react-components";
-import { listen } from "@tauri-apps/api/event";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import { match } from "ts-pattern";
-import { AppLayout } from "./layout/AppLayout";
-import { AppToaster } from "./features/toasts/AppToaster";
-import { deviceName } from "./features/detection/detection.ipc";
-import { useAppDispatch, useAppSelector } from "./store/hooks";
-import { themeToggled } from "./features/theme/theme.slice";
-import { coolerScanStarted } from "./features/detection/detection.slice";
-import { settingsLoadStarted } from "./features/settings/settings.thunks";
-import { curvePointMoved, curvesReverted } from "./features/curves/curves.slice";
-import { curvesApplied, savedProfilePushStarted } from "./features/curves/curves.thunks";
-import { selectApplyPhase, selectCurvesDirty } from "./features/curves/curves.selectors";
-import { fanStatusPolled, selectFanStats } from "./features/status/status.slice";
-import { savedProfileRestored } from "./features/toasts/toasts.slice";
+import { FluentProvider, webDarkTheme, webLightTheme } from '@fluentui/react-components';
+import { listen } from '@tauri-apps/api/event';
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import type { ReactElement } from 'react';
+import { useEffect } from 'react';
+import { match } from 'ts-pattern';
+import { selectApplyPhase, selectCurvesDirty } from './features/curves/curves.selectors';
+import { curvePointMoved, curvesReverted } from './features/curves/curves.slice';
+import { curvesApplied, savedProfilePushStarted } from './features/curves/curves.thunks';
+import { deviceName } from './features/detection/detection.ipc';
+import { coolerScanStarted } from './features/detection/detection.slice';
+import { settingsLoadStarted } from './features/settings/settings.thunks';
+import { fanStatusPolled, selectFanStats } from './features/status/status.slice';
+import { themeToggled } from './features/theme/theme.slice';
+import { AppToaster } from './features/toasts/AppToaster';
+import { savedProfileRestored } from './features/toasts/toasts.slice';
+import { AppLayout } from './layout/AppLayout';
+import { useAppDispatch, useAppSelector } from './store/hooks';
 
 const appWindow = getCurrentWindow();
 
@@ -23,7 +23,7 @@ const appWindow = getCurrentWindow();
 const STATUS_POLL_MS = 1000;
 
 /** Backend event fired when the watchdog pushed the saved profile back. */
-const PROFILE_RESTORED_EVENT = "saved-profile-restored";
+const PROFILE_RESTORED_EVENT = 'saved-profile-restored';
 
 /**
  * Root view: loads the persisted settings, then kicks off cooler detection;
@@ -39,7 +39,7 @@ function App(): ReactElement {
   const dirty = useAppSelector(selectCurvesDirty);
   const applyPhase = useAppSelector(selectApplyPhase);
   const stats = useAppSelector(selectFanStats);
-  const coolerFound = detection.state === "found";
+  const coolerFound = detection.state === 'found';
 
   useEffect(() => {
     void (async () => {
@@ -68,8 +68,8 @@ function App(): ReactElement {
   }, [dispatch, coolerFound]);
 
   const fluentTheme = match(theme)
-    .with("dark", () => webDarkTheme)
-    .with("light", () => webLightTheme)
+    .with('dark', () => webDarkTheme)
+    .with('light', () => webLightTheme)
     .exhaustive();
 
   return (
@@ -81,7 +81,7 @@ function App(): ReactElement {
         theme={theme}
         stats={stats}
         series={series}
-        dirty={dirty && coolerFound && applyPhase !== "verifying"}
+        dirty={dirty && coolerFound && applyPhase !== 'verifying'}
         curveSource={curveSource}
         onToggleTheme={() => void dispatch(themeToggled())}
         onPointMove={(seriesIndex, pointIndex, point) =>
