@@ -1,14 +1,14 @@
 # CoreLiquid
 
-A Rust workspace for controlling MSI MEG/MPG Coreliquid AIO coolers, with a
-Tauri desktop app on top.
+A Rust workspace for controlling MSI MEG/MPG Coreliquid AIO coolers, with
+CoreControl, a Tauri desktop app, on top.
 
 ## Layout
 
 ```
 Cargo.toml        workspace root
 lib/              the control library (USB HID protocol) — see lib/README.md
-app/              the Tauri desktop app
+app/              CoreControl, the Tauri desktop app
   src/            React + Fluent UI frontend
   src-tauri/      Rust backend (Tauri commands)
 justfile          workspace tasks

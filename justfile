@@ -23,7 +23,7 @@ check:
 
 # Type-check the app backend for the Windows target, no binary produced.
 check-app:
-    cargo xwin check -p coreliquid-app --features custom-protocol --target x86_64-pc-windows-msvc
+    cargo xwin check -p corecontrol-app --features custom-protocol --target x86_64-pc-windows-msvc
 
 # Install frontend dependencies.
 install:
@@ -52,4 +52,4 @@ win: install
 # Cross-compile just the Windows .exe from Linux via cargo-xwin.
 win-exe: install
     cd app && pnpm build
-    cargo xwin build --release -p coreliquid-app --features custom-protocol --target x86_64-pc-windows-msvc
+    cargo xwin build --release -p corecontrol-app --features custom-protocol --target x86_64-pc-windows-msvc

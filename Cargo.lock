@@ -382,14 +382,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "coreliquid"
-version = "0.1.0"
-dependencies = [
- "hidapi",
-]
-
-[[package]]
-name = "coreliquid-app"
+name = "corecontrol-app"
 version = "0.1.0"
 dependencies = [
  "coreliquid",
@@ -397,6 +390,13 @@ dependencies = [
  "serde_json",
  "tauri",
  "tauri-build",
+]
+
+[[package]]
+name = "coreliquid"
+version = "0.1.0"
+dependencies = [
+ "hidapi",
 ]
 
 [[package]]
