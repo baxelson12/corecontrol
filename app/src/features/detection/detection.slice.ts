@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { detectCooler } from "../utils/detection";
-import type { Detection } from "../utils/detection";
+import { detectCooler } from "./detection.ipc";
+import type { Detection } from "./detection.ipc";
 
 /**
  * Runs the backend detection scan. `detectCooler` folds its own failures

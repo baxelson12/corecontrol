@@ -1,8 +1,8 @@
 import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import { match } from "ts-pattern";
-import { coolerScanStarted } from "./detectionSlice";
-import { curvesApplied, savedProfilePushStarted } from "./curvesSlice";
+import { coolerScanStarted } from "../detection/detection.slice";
+import { curvesApplied, savedProfilePushStarted } from "../curves/curves.thunks";
 
 /** How a queued toast should read: a failure or a confirmation. */
 export type ToastKind = "error" | "success";

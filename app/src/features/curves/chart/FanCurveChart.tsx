@@ -1,6 +1,6 @@
 import { makeStyles } from "@fluentui/react-components";
 import type { ReactElement } from "react";
-import type { CurvePointMoveHandler, CurveSeries } from "../types";
+import type { CurvePointMoveHandler, CurveSeries } from "../curves.types";
 import { VIEW_WIDTH, VIEW_HEIGHT, DEFAULT_TEMP_MAX } from "./geometry";
 import { ChartGrid } from "./ChartGrid";
 import { ChartAxes } from "./ChartAxes";
@@ -36,8 +36,6 @@ export interface FanCurveChartProps {
 /**
  * The fan curve plot: temperature on x, duty on y, one draggable line per
  * channel. Fully controlled; it holds no curve state of its own.
- *
- * @returns The chart SVG.
  */
 export function FanCurveChart({
   series,

@@ -1,8 +1,8 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { match } from "ts-pattern";
-import type { ThemeName } from "../components/types";
-import { saveTheme } from "../utils/settings";
-import { settingsLoadStarted } from "./settingsThunks";
+import type { ThemeName } from "./theme.types";
+import { saveTheme } from "../settings/settings.ipc";
+import { settingsLoadStarted } from "../settings/settings.thunks";
 
 interface ThemeState {
   readonly name: ThemeName;

@@ -1,5 +1,5 @@
-import { SERIES_COLORS } from "./components";
-import type { CurveSeries } from "./components";
+import { SERIES_COLORS } from "./curves.types";
+import type { CurveSeries } from "./curves.types";
 
 /** Builds a series from [temp, duty] pairs. */
 function curve(name: string, color: string, pairs: readonly (readonly [number, number])[]): CurveSeries {

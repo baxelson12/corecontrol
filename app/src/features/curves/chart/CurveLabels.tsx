@@ -1,6 +1,6 @@
 import { makeStyles, tokens } from "@fluentui/react-components";
 import type { ReactElement } from "react";
-import type { CurveSeries } from "../types";
+import type { CurveSeries } from "../curves.types";
 import { DUTY_MAX, PLOT_BOTTOM, PLOT_LEFT, clamp, dutyToY } from "./geometry";
 
 /** Vertical space one label row needs, in viewBox units. */
@@ -75,8 +75,6 @@ function placeLabels(series: readonly CurveSeries[]): readonly PlacedLabel[] {
  * Direct series labels at the left end of each curve, where the lines are
  * furthest apart: a short dash in the series color plus the channel name in
  * neutral ink. Inert to the pointer so it never blocks a drag handle.
- *
- * @returns The labels layer.
  */
 export function CurveLabels({ series }: { readonly series: readonly CurveSeries[] }): ReactElement {
   const styles = useStyles();

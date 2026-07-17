@@ -1,6 +1,6 @@
 import { makeStyles, tokens } from "@fluentui/react-components";
 import type { PointerEvent as ReactPointerEvent, ReactElement } from "react";
-import type { CurvePoint } from "../types";
+import type { CurvePoint } from "../curves.types";
 import {
   VIEW_WIDTH,
   VIEW_HEIGHT,
@@ -30,8 +30,6 @@ export interface CurvePointHandleProps {
 /**
  * A draggable curve point. Captures the pointer on press and reports each
  * movement as a chart-domain point, clamped to the plot area.
- *
- * @returns The point handle circle.
  */
 export function CurvePointHandle({ point, color, tempMax, onMove }: CurvePointHandleProps): ReactElement {
   const styles = useStyles();

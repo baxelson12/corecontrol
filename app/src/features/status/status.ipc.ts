@@ -31,8 +31,6 @@ const readingsPattern = P.shape({
  * Reads one status report from the opened cooler. Folds failures (no cooler
  * open, device read error, malformed reply) into `null` so a polling loop
  * can skip a bad tick and keep going. Never throws.
- *
- * @returns The readings, or `null` when this tick produced none.
  */
 export async function readFanStatus(): Promise<FanReadings | null> {
   try {

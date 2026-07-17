@@ -47,7 +47,6 @@ const useStyles = makeStyles({
 });
 
 export interface TitleBarProps {
-  /** Window title, e.g. "AIO Cooler Control". */
   readonly title: string;
   /** Called on a primary-button press outside the caption buttons. */
   readonly onDragStart: () => void;
@@ -59,8 +58,6 @@ export interface TitleBarProps {
  * Custom window title bar: accent app mark, title, and Windows-style
  * minimize and close buttons. The actual window commands are wired up by
  * the caller.
- *
- * @returns The title bar.
  */
 export function TitleBar({ title, onDragStart, onMinimize, onClose }: TitleBarProps): ReactElement {
   const styles = useStyles();

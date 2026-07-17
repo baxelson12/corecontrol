@@ -1,7 +1,7 @@
 import { Body1Strong, Caption1, makeStyles, tokens } from "@fluentui/react-components";
 import type { ReactElement } from "react";
-import { FanCurveChart } from "./fan-curve-chart/FanCurveChart";
-import type { CurvePointMoveHandler, CurveSeries } from "./types";
+import { FanCurveChart } from "./chart/FanCurveChart";
+import type { CurvePointMoveHandler, CurveSeries } from "./curves.types";
 
 const useStyles = makeStyles({
   root: {
@@ -33,8 +33,6 @@ export interface FanCurveCardProps {
  * The fan curve card: title, drag hint, and the chart. Curve state (unsaved
  * edits, no saved profile) is reported by the pill in the layout, below the
  * card.
- *
- * @returns The chart card.
  */
 export function FanCurveCard({
   series,

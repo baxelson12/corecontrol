@@ -24,12 +24,37 @@ export type CurvePointMoveHandler = (seriesIndex: number, pointIndex: number, po
  */
 export type CurveSource = "device" | "saved" | "defaults";
 
-/** The two UI color themes. */
-export type ThemeName = "light" | "dark";
-
 /** Channel colors from the design. */
 export const SERIES_COLORS = {
   radiatorFans: "oklch(0.68 0.14 235)",
   unitFan: "oklch(0.68 0.14 155)",
   pump: "oklch(0.68 0.14 330)",
 } as const;
+
+/** Where a profile write currently stands, driving the apply toast. */
+export type ApplyPhase =
+  /** No write in flight. */
+  | "idle"
+  /** Written; polling the device until it reports the new profile. */
+  | "verifying"
+  /** The device never confirmed the write; a retry is on offer. */
+  | "unconfirmed";
+
+export interface CurvesState {
+  /** Curves as currently edited on the chart. */
+  readonly edited: readonly CurveSeries[];
+  /** Curves last confirmed on the device. */
+  readonly applied: readonly CurveSeries[];
+  /** Whether `applied` was read from (or written to) the device, or is the
+   * design fallback shown while no custom profile is running. */
+  readonly source: CurveSource;
+  /** Where the in-flight profile write stands, if any. */
+  readonly applyPhase: ApplyPhase;
+}
+
+/** Identifies one dragged point and its new chart-domain position. */
+export interface PointMove {
+  readonly seriesIndex: number;
+  readonly pointIndex: number;
+  readonly point: CurvePoint;
+}

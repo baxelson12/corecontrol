@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import type { CurvePointMoveHandler, CurveSeries } from "../types";
+import type { CurvePointMoveHandler, CurveSeries } from "../curves.types";
 import { PLOT_LEFT, PLOT_RIGHT, PLOT_BOTTOM, linePath } from "./geometry";
 import { CurvePointHandle } from "./CurvePointHandle";
 
@@ -13,8 +13,7 @@ export interface CurveSeriesLayerProps {
 
 /**
  * One curve: optional soft fill, the line itself, and a handle per point.
- *
- * @returns The series layer, or null for a series without points.
+ * A series without points renders nothing.
  */
 export function CurveSeriesLayer({
   series,

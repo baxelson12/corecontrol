@@ -1,4 +1,4 @@
-import type { CurvePoint } from "../types";
+import type { CurvePoint } from "../curves.types";
 
 export const VIEW_WIDTH = 620;
 export const VIEW_HEIGHT = 300;

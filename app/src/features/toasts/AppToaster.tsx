@@ -12,10 +12,12 @@ import {
   useToastController,
 } from "@fluentui/react-components";
 import { match } from "ts-pattern";
-import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { applyRetryDismissed, curvesApplied, selectApplyPhase } from "../store/curvesSlice";
-import type { ApplyPhase } from "../store/curvesSlice";
-import { toastDelivered } from "../store/toastsSlice";
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import { applyRetryDismissed } from "../curves/curves.slice";
+import { curvesApplied } from "../curves/curves.thunks";
+import { selectApplyPhase } from "../curves/curves.selectors";
+import type { ApplyPhase } from "../curves/curves.types";
+import { toastDelivered } from "./toasts.slice";
 
 /** Toast id of the single apply-progress toast, so it can be updated. */
 const APPLY_TOAST_ID = "apply-progress";
@@ -56,8 +58,6 @@ function unconfirmedToast(onRetry: () => void, onDismiss: () => void): ReactElem
  * Bridges the store to Fluent's imperative toast API: drains the queued
  * error toasts, and keeps one persistent toast tracking the apply flow
  * (spinner while the device confirms, retry offer when it never does).
- *
- * @returns The mounted toaster outlet.
  */
 export function AppToaster(): ReactElement {
   const toasterId = useId("app-toaster");

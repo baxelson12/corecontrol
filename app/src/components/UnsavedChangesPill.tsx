@@ -30,8 +30,6 @@ export interface UnsavedChangesPillProps {
 /**
  * Floating pill shown while edited fan curves differ from the applied ones.
  * The layout keeps it below the chart, at the bottom of the window.
- *
- * @returns The pill with Revert and Apply actions.
  */
 export function UnsavedChangesPill({
   message = "Unsaved changes",

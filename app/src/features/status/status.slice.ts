@@ -1,8 +1,8 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import type { StatCardProps } from "../components/StatCard";
-import { SERIES_COLORS } from "../components/types";
-import { readFanStatus } from "../utils/status";
-import type { FanReadings } from "../utils/status";
+import type { StatCardProps } from "./StatCard";
+import { SERIES_COLORS } from "../curves/curves.types";
+import { readFanStatus } from "./status.ipc";
+import type { FanReadings } from "./status.ipc";
 
 /** Live cooler readings: the last good status report, if any. */
 interface StatusState {
@@ -35,8 +35,6 @@ const statusSlice = createSlice({
 /**
  * Maps the current readings to the three stat cards, in design order. Cards
  * carry `null` values until the first report arrives.
- *
- * @returns One card per cooling channel.
  */
 export function selectFanStats(state: { readonly status: StatusState }): readonly StatCardProps[] {
   const readings = state.status.readings;

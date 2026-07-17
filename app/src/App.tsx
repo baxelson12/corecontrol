@@ -5,22 +5,17 @@ import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { match } from "ts-pattern";
 import { AppLayout } from "./layout/AppLayout";
-import { AppToaster } from "./components/AppToaster";
-import { deviceName } from "./utils/detection";
+import { AppToaster } from "./features/toasts/AppToaster";
+import { deviceName } from "./features/detection/detection.ipc";
 import { useAppDispatch, useAppSelector } from "./store/hooks";
-import { themeToggled } from "./store/themeSlice";
-import { coolerScanStarted } from "./store/detectionSlice";
-import { settingsLoadStarted } from "./store/settingsThunks";
-import {
-  curvePointMoved,
-  curvesApplied,
-  curvesReverted,
-  savedProfilePushStarted,
-  selectApplyPhase,
-  selectCurvesDirty,
-} from "./store/curvesSlice";
-import { fanStatusPolled, selectFanStats } from "./store/statusSlice";
-import { savedProfileRestored } from "./store/toastsSlice";
+import { themeToggled } from "./features/theme/theme.slice";
+import { coolerScanStarted } from "./features/detection/detection.slice";
+import { settingsLoadStarted } from "./features/settings/settings.thunks";
+import { curvePointMoved, curvesReverted } from "./features/curves/curves.slice";
+import { curvesApplied, savedProfilePushStarted } from "./features/curves/curves.thunks";
+import { selectApplyPhase, selectCurvesDirty } from "./features/curves/curves.selectors";
+import { fanStatusPolled, selectFanStats } from "./features/status/status.slice";
+import { savedProfileRestored } from "./features/toasts/toasts.slice";
 
 const appWindow = getCurrentWindow();
 
@@ -34,8 +29,6 @@ const PROFILE_RESTORED_EVENT = "saved-profile-restored";
  * Root view: loads the persisted settings, then kicks off cooler detection;
  * once a cooler is open it pushes the saved fan profile to the device and
  * polls it for live status, binding the store to the presentational layout.
- *
- * @returns The themed app.
  */
 function App(): ReactElement {
   const dispatch = useAppDispatch();

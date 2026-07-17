@@ -1,8 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { match, P } from "ts-pattern";
-import type { ThemeName } from "../components/types";
-import { parseProfile } from "./profile";
-import type { FanProfile } from "./profile";
+import type { ThemeName } from "../theme/theme.types";
+import { parseProfile } from "../curves/profile";
+import type { FanProfile } from "../curves/profile";
 
 /** Settings persisted across launches, as exchanged with the backend. */
 export interface AppSettings {
@@ -20,8 +20,6 @@ const EMPTY_SETTINGS: AppSettings = { theme: null, fanProfile: null };
  * Loads the persisted settings. Folds failures (IPC error, malformed reply,
  * illegal saved profile) into the empty settings so the caller falls back to
  * the system theme and the default curves. Never throws.
- *
- * @returns The persisted settings, with unusable fields nulled out.
  */
 export async function loadSettings(): Promise<AppSettings> {
   try {

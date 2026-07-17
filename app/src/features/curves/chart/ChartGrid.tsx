@@ -2,11 +2,7 @@ import { tokens } from "@fluentui/react-components";
 import type { ReactElement } from "react";
 import { GRID_STEP, DUTY_MAX, PLOT_LEFT, PLOT_RIGHT, PLOT_TOP, PLOT_BOTTOM, tempToX, dutyToY } from "./geometry";
 
-/**
- * Minor grid lines every 5 °C and 5 % duty, plus the top border.
- *
- * @returns The grid layer.
- */
+/** Minor grid lines every 5 °C and 5 % duty, plus the top border. */
 export function ChartGrid({ tempMax }: { readonly tempMax: number }): ReactElement {
   const vCount = Math.max(0, Math.ceil(tempMax / GRID_STEP) - 1);
   const hCount = DUTY_MAX / GRID_STEP - 1;

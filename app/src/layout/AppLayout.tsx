@@ -3,12 +3,13 @@ import type { ReactElement } from "react";
 import { match } from "ts-pattern";
 import { TitleBar } from "../components/TitleBar";
 import { DeviceHeader } from "../components/DeviceHeader";
-import { ThemeToggle } from "../components/ThemeToggle";
-import { StatCard } from "../components/StatCard";
-import type { StatCardProps } from "../components/StatCard";
-import { FanCurveCard } from "../components/FanCurveCard";
 import { UnsavedChangesPill } from "../components/UnsavedChangesPill";
-import type { CurvePointMoveHandler, CurveSeries, CurveSource, ThemeName } from "../components/types";
+import { ThemeToggle } from "../features/theme/ThemeToggle";
+import type { ThemeName } from "../features/theme/theme.types";
+import { StatCard } from "../features/status/StatCard";
+import type { StatCardProps } from "../features/status/StatCard";
+import { FanCurveCard } from "../features/curves/FanCurveCard";
+import type { CurvePointMoveHandler, CurveSeries, CurveSource } from "../features/curves/curves.types";
 
 const useStyles = makeStyles({
   root: {
@@ -80,8 +81,6 @@ export interface AppLayoutProps {
  * The whole window: title bar, device header with theme toggle, channel
  * stat cards, and the fan curve card. Purely presentational; every piece of
  * state and behavior arrives through props.
- *
- * @returns The app layout.
  */
 export function AppLayout(props: AppLayoutProps): ReactElement {
   const styles = useStyles();

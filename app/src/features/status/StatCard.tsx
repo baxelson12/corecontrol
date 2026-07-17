@@ -46,8 +46,6 @@ export interface StatCardProps {
 /**
  * Live readout card for one cooling channel: colored dot, name, RPM, and
  * duty percentage. Values still awaiting a reading render as a dash.
- *
- * @returns The stat card.
  */
 export function StatCard({ label, color, rpm, dutyPct }: StatCardProps): ReactElement {
   const styles = useStyles();

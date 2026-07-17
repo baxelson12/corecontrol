@@ -26,8 +26,6 @@ function tickText(value: number, max: number, unit: string): string {
  * The two axis lines, with a temperature label under every other vertical
  * grid line and a duty label beside every other horizontal one, so any
  * curve point can be read precisely off the edges of the plot.
- *
- * @returns The axes layer.
  */
 export function ChartAxes({ tempMax }: { readonly tempMax: number }): ReactElement {
   const styles = useStyles();

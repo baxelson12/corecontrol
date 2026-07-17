@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { loadSettings } from "../utils/settings";
+import { loadSettings } from "./settings.ipc";
 
 /**
  * Loads the persisted settings on startup. `loadSettings` folds its own

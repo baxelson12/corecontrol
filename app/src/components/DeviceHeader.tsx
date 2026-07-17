@@ -21,11 +21,7 @@ export interface DeviceHeaderProps {
   readonly name: string;
 }
 
-/**
- * Device identity block: category eyebrow over the product name.
- *
- * @returns The header text block.
- */
+/** Device identity block: category eyebrow over the product name. */
 export function DeviceHeader({ label, name }: DeviceHeaderProps): ReactElement {
   const styles = useStyles();
   return (
