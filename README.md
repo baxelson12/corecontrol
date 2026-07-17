@@ -1,117 +1,56 @@
-# coreliquid-control 
+# CoreLiquid
 
-A Rust library for controlling MSI MEG/MPG Coreliquid AIO coolers over USB HID.
-It sets fan and pump curves, pushes temperature, and reads status, all without
-MSI Center running.
-
-The protocol was reverse-engineered from USB captures of MSI Center, so the code
-follows what the hardware actually accepts. Unofficial and early-stage. Not
-affiliated with MSI.
+A Rust workspace for controlling MSI MEG/MPG Coreliquid AIO coolers, with
+CoreControl, a Tauri desktop app, on top.
 
 ## Layout
 
 ```
-src/
-├── lib.rs           crate root: module wiring and public exports
-├── error.rs         the shared error type
-├── protocol.rs      on-wire report format, fan curves, configuration
-├── cooler.rs        opening a device and applying or reading profiles
-├── models/
-│   ├── mod.rs       model registry and device detection
-│   ├── s280.rs      MEG Coreliquid S280 spec
-│   ├── s360.rs      MEG Coreliquid S360 spec
-│   └── k360.rs      MPG Coreliquid K360 spec
-└── bin/
-    ├── test_profile.rs   applies a fixed test profile
-    └── list_devices.rs   lists the HID interfaces hidapi can see
+Cargo.toml        workspace root
+lib/              the control library (USB HID protocol) — see lib/README.md
+app/              CoreControl, the Tauri desktop app
+  src/            React + Fluent UI frontend
+  src-tauri/      Rust backend (Tauri commands)
+justfile          workspace tasks
 ```
 
-## What each piece does
+The app consumes the library through the `Cooler` facade. Startup device
+detection (`detect_cooler`), live status polling (`fan_status`, speeds and
+duties for the stat cards), and the fan curve profile (`apply_fan_profile`,
+confirmed by reading the running profile back with `read_fan_profile`)
+are wired end to end. The app owns the profile: the applied curves and the
+theme choice persist in `settings.json` under the per-user app config
+directory, and the saved profile is pushed back to the cooler on startup.
+A background watchdog re-checks the running profile every five minutes and
+pushes the saved profile back if the device has drifted (a firmware reset,
+another tool), even while the app sits in the tray; a restore shows a toast
+when the window is open. Errors (detection failure, a rejected or
+unconfirmed profile write) surface as toasts, with a retry offered when the
+cooler never confirms a write.
 
-### protocol.rs
+The app lives in the notification area: a tray icon with an Open/Exit menu
+is always present, and launching the exe with `--minimized` (what the
+run-at-startup entry does) starts it hidden in the tray. Run-at-startup is
+registered on first launch; Task Manager's Startup apps page turns it off.
+Launching the exe a second time reveals the running instance instead of
+starting another one. The title bar minimize button hides the window to the
+tray (no taskbar entry); the close button exits the app, tray icon included.
 
-The wire format lives here: the 64-byte report structure, the command bytes,
-and the five channel slots. Two public types carry most of the weight.
+## Prerequisites
 
-`ChannelCurve` is a single fan curve, built with
-`ChannelCurve::from_points(&[(temp, duty), ...])`. A curve takes between
-`MIN_CURVE_POINTS` (4) and `MAX_CURVE_POINTS` (7) points, with non-zero,
-strictly increasing temperatures. Anything outside those bounds is rejected at
-construction, because the firmware rejects it too.
+- Rust (stable) and [`just`](https://github.com/casey/just)
+- [pnpm](https://pnpm.io) and Node for the frontend
+- The [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your OS
+- For Windows: the MSVC toolchain (native) or `cargo-xwin` (cross from Linux)
 
-`FanConfig` holds the curves for every channel (radiator fans, waterblock fan,
-pump) and serializes them into the two reports the device expects. `FanStatus`
-and the status parser also live here, though the status reply layout is not yet
-confirmed against hardware.
-
-### cooler.rs
-
-`Cooler` is the handle to an open device. It provides:
-
-- `Cooler::detect()` and `Cooler::open(api, spec)` to find and open a cooler
-- `initialize()` to run the connect handshake the device expects before control
-- `new_config()` to get a `FanConfig` seeded with safe defaults
-- `apply_config(&config)` to write a profile
-- `push_cpu_temp(temp)` to feed the device a temperature so it evaluates curves
-- `status()` to read speeds back
-
-### models/
-
-Each supported cooler is a small file exposing one `SPEC` constant: its USB
-product ID, display name, and radiator fan count. `mod.rs` gathers those into a
-registry and exposes `available_devices()` for detection and `known_models()`
-for listing. Adding a cooler is a new file plus one line in the registry array,
-with no other code touched.
-
-### error.rs
-
-`ControllerError`, the single error type every fallible call returns.
-
-### bin/
-
-`test_profile` applies a fixed profile and is handy for confirming the hardware
-responds. `list_devices` is a read-only diagnostic that prints every MSI HID
-interface hidapi enumerates, useful when a cooler is not being detected.
-
-## Usage
-
-```rust
-use coreliquid::{ChannelCurve, Cooler};
-
-let mut cooler = Cooler::detect()?;
-cooler.initialize()?;
-
-let mut config = cooler.new_config();
-config.set_radiators(ChannelCurve::from_points(&[(35, 30), (50, 55), (65, 80), (80, 100)]));
-config.set_pump(ChannelCurve::from_points(&[(30, 80), (45, 85), (60, 95), (75, 100)]));
-cooler.apply_config(&config)?;
-```
-
-## Building
+## Common tasks
 
 ```
-cargo build
-cargo run --bin test_profile
+just check          # fmt + clippy + test the library
+just dev            # run the app with hot reload
+just win            # build the Windows exe + installers (run on Windows)
+just win-exe        # cross-compile just the Windows exe from Linux
+just win-installer  # cross-build the NSIS installer from Linux (needs nsis)
 ```
 
-The cooler is driven from Windows, so to produce a Windows binary from a Linux
-box, cross-compile with cargo-xwin:
-
-```
-cargo xwin build --release --target x86_64-pc-windows-msvc
-```
-
-## Supported models
-
-| Model               | USB ID    | Radiator fans |
-|---------------------|-----------|---------------|
-| MEG Coreliquid S280 | 0db0:6a04 | 2             |
-| MEG Coreliquid S360 | 0db0:6a05 | 3             |
-| MPG Coreliquid K360 | 0db0:b130 | 3             |
-
-## Status
-
-The S280 is the model the protocol was captured on, so its behavior is
-confirmed. The S360 and K360 share the same protocol family and have confirmed
-product IDs. Their channel mapping is inferred from that shared protocol and has
-not been verified on hardware. 
+See [`lib/README.md`](lib/README.md) for the library API and supported models.

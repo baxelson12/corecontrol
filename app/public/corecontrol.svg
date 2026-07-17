@@ -1,0 +1,18 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tube" x1="0" y1="34" x2="0" y2="222" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#74b3e6"/><stop offset="0.5" stop-color="#2b62bf"/><stop offset="1" stop-color="#153f80"/>
+    </linearGradient>
+    <linearGradient id="hi" x1="0" y1="34" x2="0" y2="150" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.75"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="orb" cx="116" cy="114" r="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f0fdff"/><stop offset="0.32" stop-color="#8fe4ff"/><stop offset="1" stop-color="#149ad6"/>
+    </radialGradient>
+    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="4"/></filter>
+  </defs>
+  <path d="M143.9,43.3 A86,86 0 1 1 112.1,43.3" fill="none" stroke="url(#tube)" stroke-width="30" stroke-linecap="round"/>
+  <path d="M143.9,43.3 A86,86 0 1 1 112.1,43.3" fill="none" stroke="url(#hi)" stroke-width="7" stroke-linecap="round" opacity="0.85"/>
+  <circle cx="128" cy="128" r="40" fill="url(#orb)"/>
+  <ellipse cx="112" cy="108" rx="9" ry="15" transform="rotate(-30 112 108)" fill="#fff" opacity="0.72" filter="url(#soft)"/>
+</svg>

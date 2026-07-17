@@ -42,8 +42,13 @@ pub(crate) const CH_PUMP: usize = 4;
 pub(crate) const MAX_DUTY: u8 = 100;
 /// Highest plausible temperature, in degrees Celsius.
 pub(crate) const TEMP_CEILING: u8 = 120;
-/// Highest plausible speed, used only for sanity assertions.
+/// Highest plausible speed; readings above it are rejected as implausible.
 const RPM_CEILING: u16 = 12_000;
+
+/// Byte offset of the first channel's speed in a status reply.
+const STATUS_RPM_OFFSET: usize = 0x02;
+/// Byte offset of the first channel's duty in a status reply.
+const STATUS_DUTY_OFFSET: usize = 0x16;
 
 // --- Curve point limits (public) --------------------------------------------
 
@@ -78,21 +83,38 @@ const _: () = assert!(
     FIRST_SLOT_OFFSET + CHANNEL_COUNT * SLOT_STRIDE <= REPORT_LEN,
     "channel slots overflow the report"
 );
+const _: () = assert!(
+    STATUS_RPM_OFFSET + CHANNEL_COUNT * 2 <= STATUS_DUTY_OFFSET,
+    "status speed block overlaps the duty block"
+);
+const _: () = assert!(
+    STATUS_DUTY_OFFSET + CHANNEL_COUNT * 2 <= REPORT_LEN,
+    "status duty block overflows the report"
+);
 
 // --- Status -----------------------------------------------------------------
 
-/// Measured speeds for the mapped channels, as reported by the device.
+/// Measured speeds and duty cycles for the mapped channels, from one status
+/// reply.
 ///
-/// The status reply layout is not yet capture-confirmed; the offsets in
-/// `parse_status` are guarded by plausibility assertions.
+/// The layout matches liquidctl's driver for the same cooler family: five
+/// little-endian u16 speeds from offset `0x02`, five little-endian u16 duty
+/// percentages from offset `0x16`, in channel-slot order. Readings outside
+/// plausible bounds are rejected during parsing.
 #[derive(Debug, Clone, Copy)]
 pub struct FanStatus {
     /// Speed of the first radiator fan in RPM.
     pub radiator_rpm: u16,
+    /// Duty of the radiator fan channel, in percent (0–100).
+    pub radiator_duty: u8,
     /// Waterblock (60 mm) fan speed in RPM.
     pub waterblock_rpm: u16,
+    /// Duty of the waterblock fan channel, in percent (0–100).
+    pub waterblock_duty: u8,
     /// Pump speed in RPM.
     pub pump_rpm: u16,
+    /// Duty of the pump channel, in percent (0–100).
+    pub pump_duty: u8,
 }
 
 // --- Channel curve ----------------------------------------------------------
@@ -109,41 +131,67 @@ pub struct ChannelCurve {
 impl ChannelCurve {
     /// Builds a curve from `MIN_CURVE_POINTS`..=`MAX_CURVE_POINTS` points, each
     /// a (temperature C, duty %) pair. Temperatures must be non-zero and
-    /// strictly increasing; a leading 0 C point is treated as an empty curve.
+    /// strictly increasing. For input that crosses a trust boundary use
+    /// [`ChannelCurve::try_from_points`] instead.
+    ///
+    /// # Panics
+    /// Panics when [`ChannelCurve::try_from_points`] would reject the points.
     pub fn from_points(points: &[(u8, u8)]) -> ChannelCurve {
-        assert!(
-            points.len() >= MIN_CURVE_POINTS,
-            "curve needs at least four points"
-        );
-        assert!(
-            points.len() <= MAX_CURVE_POINTS,
-            "curve accepts at most seven points"
-        );
-        assert!(points[0].0 != 0, "first curve point must start above 0 C");
-        assert!(
-            points
-                .iter()
-                .all(|&(t, d)| t <= TEMP_CEILING && d <= MAX_DUTY),
-            "curve point out of range"
-        );
-        assert!(
-            points.windows(2).all(|pair| pair[1].0 > pair[0].0),
-            "curve temperatures must strictly increase"
-        );
+        match ChannelCurve::try_from_points(points) {
+            Ok(curve) => curve,
+            Err(error) => panic!("{error}"),
+        }
+    }
+
+    /// Builds a curve from (temperature C, duty %) pairs, validating instead
+    /// of panicking. This is the constructor for points arriving from outside
+    /// the process (IPC payloads, config files).
+    ///
+    /// # Errors
+    /// Returns `ControllerError::InvalidCurve` when the slice carries fewer
+    /// than `MIN_CURVE_POINTS` or more than `MAX_CURVE_POINTS` points, a
+    /// temperature is zero or implausibly high, a duty exceeds 100 %, or the
+    /// temperatures do not strictly increase.
+    pub fn try_from_points(points: &[(u8, u8)]) -> Result<ChannelCurve, ControllerError> {
+        if points.len() < MIN_CURVE_POINTS {
+            return Err(ControllerError::InvalidCurve("fewer than four points"));
+        }
+        if points.len() > MAX_CURVE_POINTS {
+            return Err(ControllerError::InvalidCurve("more than seven points"));
+        }
+        if points
+            .iter()
+            .any(|&(temp, _)| temp == 0 || temp > TEMP_CEILING)
+        {
+            return Err(ControllerError::InvalidCurve("temperature must be 1-120 C"));
+        }
+        if points.iter().any(|&(_, duty)| duty > MAX_DUTY) {
+            return Err(ControllerError::InvalidCurve("duty must be 0-100 %"));
+        }
+        if !points.windows(2).all(|pair| pair[1].0 > pair[0].0) {
+            return Err(ControllerError::InvalidCurve(
+                "temperatures must strictly increase",
+            ));
+        }
         let mut temps = [0u8; MAX_CURVE_POINTS];
         let mut duties = [0u8; MAX_CURVE_POINTS];
-        let mut index = 0;
-        while index < points.len() {
-            temps[index] = points[index].0;
-            duties[index] = points[index].1;
-            index += 1;
+        for (index, &(temp, duty)) in points.iter().enumerate() {
+            temps[index] = temp;
+            duties[index] = duty;
         }
 
-        ChannelCurve {
+        Ok(ChannelCurve {
             mode: CURVE_MODE,
             temps,
             duties,
-        }
+        })
+    }
+
+    /// Number of populated points: the length of the leading run of non-zero
+    /// temperatures. Entries beyond it in [`ChannelCurve::points`] are
+    /// padding.
+    pub fn point_count(&self) -> usize {
+        self.temps.iter().take_while(|&&temp| temp != 0).count()
     }
 
     /// Returns the curve as `MAX_CURVE_POINTS` (temperature C, duty %) pairs,
@@ -302,26 +350,109 @@ pub(crate) fn build_command(command: u8, payload: &[u8]) -> [u8; REPORT_LEN] {
     buffer
 }
 
-/// Parses a status reply. Only the request opcode is confirmed; the byte
-/// offsets here are unverified and guarded by plausibility assertions.
+/// Reads one channel's little-endian u16 from a status reply block.
+fn status_channel_u16(report: &[u8; REPORT_LEN], base: usize, channel: usize) -> u16 {
+    assert!(channel < CHANNEL_COUNT, "channel outside the report");
+    assert!(
+        base == STATUS_RPM_OFFSET || base == STATUS_DUTY_OFFSET,
+        "not a status block offset: {base:#x}"
+    );
+    let offset = base + channel * 2;
+
+    u16::from_le_bytes([report[offset], report[offset + 1]])
+}
+
+/// Reads one channel's speed from a status reply, rejecting implausible
+/// values (a sign of a corrupt or misaligned reply).
+fn status_rpm(report: &[u8; REPORT_LEN], channel: usize) -> Result<u16, ControllerError> {
+    let value = status_channel_u16(report, STATUS_RPM_OFFSET, channel);
+    if value > RPM_CEILING {
+        return Err(ControllerError::ImplausibleReading(value));
+    }
+
+    Ok(value)
+}
+
+/// Reads one channel's duty percentage from a status reply, rejecting values
+/// above 100.
+fn status_duty(report: &[u8; REPORT_LEN], channel: usize) -> Result<u8, ControllerError> {
+    let value = status_channel_u16(report, STATUS_DUTY_OFFSET, channel);
+    if value > u16::from(MAX_DUTY) {
+        return Err(ControllerError::ImplausibleReading(value));
+    }
+
+    u8::try_from(value).map_err(|_| ControllerError::ImplausibleReading(value))
+}
+
+/// Extracts one channel's curve from a duty/temperature reply pair, or
+/// `None` when the slot does not carry a well-formed custom curve (a
+/// different mode byte, too few points, or out-of-range values).
+fn parse_curve_slot(
+    duty_report: &[u8; REPORT_LEN],
+    temp_report: &[u8; REPORT_LEN],
+    channel: usize,
+) -> Option<ChannelCurve> {
+    assert!(channel < CHANNEL_COUNT, "channel outside the report");
+    let slot = FIRST_SLOT_OFFSET + channel * SLOT_STRIDE;
+    if duty_report[slot] != CURVE_MODE || temp_report[slot] != CURVE_MODE {
+        return None;
+    }
+    let temps = &temp_report[slot + 1..slot + 1 + MAX_CURVE_POINTS];
+    let duties = &duty_report[slot + 1..slot + 1 + MAX_CURVE_POINTS];
+    let mut pairs = [(0u8, 0u8); MAX_CURVE_POINTS];
+    for (pair, (&temp, &duty)) in pairs.iter_mut().zip(temps.iter().zip(duties)) {
+        *pair = (temp, duty);
+    }
+    let count = pairs.iter().take_while(|&&(temp, _)| temp != 0).count();
+
+    ChannelCurve::try_from_points(pairs.get(..count)?).ok()
+}
+
+/// Parses a duty-configuration reply (`0x32`) and a temperature reply
+/// (`0x33`) into the profile the device is running. Returns `None` when any
+/// channel slot is not a well-formed custom curve, meaning the device is in
+/// another mode or has no profile applied. The slot layout mirrors the set
+/// reports and matches liquidctl's driver for the same family.
+pub(crate) fn parse_profile(
+    duty_report: &[u8; REPORT_LEN],
+    temp_report: &[u8; REPORT_LEN],
+) -> Result<Option<FanConfig>, ControllerError> {
+    if duty_report[1] != CMD_GET_DUTY {
+        return Err(ControllerError::UnexpectedResponse(duty_report[1]));
+    }
+    // The S280 echoes 0x32 in the temperature reply as well, so both config
+    // echoes are accepted; the request order pairs the replies.
+    if temp_report[1] != CMD_GET_TEMP && temp_report[1] != CMD_GET_DUTY {
+        return Err(ControllerError::UnexpectedResponse(temp_report[1]));
+    }
+    let Some(first) = parse_curve_slot(duty_report, temp_report, 0) else {
+        return Ok(None);
+    };
+    let mut channels = [first; CHANNEL_COUNT];
+    for (channel, slot) in channels.iter_mut().enumerate().skip(1) {
+        let Some(curve) = parse_curve_slot(duty_report, temp_report, channel) else {
+            return Ok(None);
+        };
+        *slot = curve;
+    }
+
+    Ok(Some(FanConfig { channels }))
+}
+
+/// Parses a status reply into speeds and duties for the mapped channels. The
+/// speed offsets are capture-confirmed; the duty offsets match liquidctl's
+/// driver for the same family.
 pub(crate) fn parse_status(report: &[u8; REPORT_LEN]) -> Result<FanStatus, ControllerError> {
-    assert_eq!(report.len(), REPORT_LEN, "status report wrong length");
     if report[1] != CMD_STATUS {
         return Err(ControllerError::UnexpectedResponse(report[1]));
     }
-    let status = FanStatus {
-        radiator_rpm: u16::from_le_bytes([report[2], report[3]]),
-        waterblock_rpm: u16::from_le_bytes([report[8], report[9]]),
-        pump_rpm: u16::from_le_bytes([report[10], report[11]]),
-    };
-    assert!(
-        status.pump_rpm <= RPM_CEILING,
-        "pump rpm implausible - offsets wrong?"
-    );
-    assert!(
-        status.radiator_rpm <= RPM_CEILING,
-        "radiator rpm implausible - offsets wrong?"
-    );
 
-    Ok(status)
+    Ok(FanStatus {
+        radiator_rpm: status_rpm(report, 0)?,
+        radiator_duty: status_duty(report, 0)?,
+        waterblock_rpm: status_rpm(report, CH_WATERBLOCK)?,
+        waterblock_duty: status_duty(report, CH_WATERBLOCK)?,
+        pump_rpm: status_rpm(report, CH_PUMP)?,
+        pump_duty: status_duty(report, CH_PUMP)?,
+    })
 }
