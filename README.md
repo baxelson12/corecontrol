@@ -21,8 +21,12 @@ confirmed by reading the running profile back with `read_fan_profile`)
 are wired end to end. The app owns the profile: the applied curves and the
 theme choice persist in `settings.json` under the per-user app config
 directory, and the saved profile is pushed back to the cooler on startup.
-Errors (detection failure, a rejected or unconfirmed profile write) surface
-as toasts, with a retry offered when the cooler never confirms a write.
+A background watchdog re-checks the running profile every five minutes and
+pushes the saved profile back if the device has drifted (a firmware reset,
+another tool), even while the app sits in the tray; a restore shows a toast
+when the window is open. Errors (detection failure, a rejected or
+unconfirmed profile write) surface as toasts, with a retry offered when the
+cooler never confirms a write.
 
 The app lives in the notification area: a tray icon with an Open/Exit menu
 is always present, and launching the exe with `--minimized` (what the

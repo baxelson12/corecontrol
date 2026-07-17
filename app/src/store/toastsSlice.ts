@@ -48,6 +48,16 @@ const toastsSlice = createSlice({
     delivered(state, action: PayloadAction<number>): ToastsState {
       return { ...state, queue: state.queue.filter((entry) => entry.key !== action.payload) };
     },
+    /** The backend watchdog found the cooler off the saved profile and
+     * pushed the saved one back. */
+    restored(state): ToastsState {
+      return enqueue(
+        state,
+        "success",
+        "Fan profile restored",
+        "The cooler had drifted from the saved profile; it was pushed back.",
+      );
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(coolerScanStarted.fulfilled, (state, action): ToastsState => {
@@ -80,5 +90,5 @@ const toastsSlice = createSlice({
   },
 });
 
-export const { delivered: toastDelivered } = toastsSlice.actions;
+export const { delivered: toastDelivered, restored: savedProfileRestored } = toastsSlice.actions;
 export const toastsReducer = toastsSlice.reducer;

@@ -73,6 +73,15 @@ impl SettingsHandle {
         Ok(guard.clone())
     }
 
+    /// Returns the saved fan profile, or `None` when none has been applied
+    /// yet. Read by the profile watchdog on every check.
+    ///
+    /// # Errors
+    /// Returns `Err` with a message when the settings mutex is poisoned.
+    pub fn fan_profile(&self) -> Result<Option<FanProfile>, String> {
+        Ok(self.snapshot()?.fan_profile)
+    }
+
     /// Applies `update` to the settings and writes them to disk.
     ///
     /// # Errors

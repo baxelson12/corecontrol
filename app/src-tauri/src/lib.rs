@@ -7,7 +7,9 @@
 //! reads back the profile the device is running, so the UI can confirm a
 //! write took effect. The [`settings`] module persists the theme choice and
 //! the last applied profile across launches. The open device and the settings live in Tauri-managed state
-//! shared by the commands.
+//! shared by the commands. The [`watchdog`] module keeps a background thread
+//! that periodically re-checks the running profile against the saved one and
+//! pushes the saved profile back when they differ.
 //!
 //! The app lives in the notification area: the [`tray`] module owns the tray
 //! icon and its Open/Exit menu. The autostart entry (managed by the
@@ -18,6 +20,7 @@
 
 mod settings;
 mod tray;
+mod watchdog;
 
 use std::sync::{Arc, Mutex};
 
@@ -60,7 +63,7 @@ pub struct FanReadings {
 }
 
 /// One control point of a fan curve, as exchanged with the UI.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CurvePointDto {
     /// Coolant temperature in degrees Celsius (1–120).
     pub temp: u8,
@@ -70,7 +73,7 @@ pub struct CurvePointDto {
 
 /// A full fan profile shaped for the UI: one curve of 4–7 points per display
 /// channel.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FanProfile {
     /// Curve applied uniformly to the radiator fan channels.
@@ -267,7 +270,8 @@ async fn fan_status(state: tauri::State<'_, CoolerHandle>) -> Result<FanReadings
 }
 
 /// IPC command: validates a fan curve profile from the UI and applies it to
-/// the cooler.
+/// the cooler. A successful write also stamps the apply time, which holds
+/// off the profile watchdog while the UI verifies and saves the profile.
 ///
 /// Runs the HID exchange on a blocking thread so the IPC runtime is never
 /// stalled by the device.
@@ -278,12 +282,18 @@ async fn fan_status(state: tauri::State<'_, CoolerHandle>) -> Result<FanReadings
 #[tauri::command]
 async fn apply_fan_profile(
     state: tauri::State<'_, CoolerHandle>,
+    stamp: tauri::State<'_, watchdog::ApplyStamp>,
     profile: FanProfile,
 ) -> Result<(), String> {
     let handle = state.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || write_profile(&handle.0, &profile))
-        .await
-        .map_err(|error| error.to_string())?
+    let stamp = stamp.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        write_profile(&handle.0, &profile)?;
+        stamp.record();
+        Ok(())
+    })
+    .await
+    .map_err(|error| error.to_string())?
 }
 
 /// IPC command: reads back the fan curve profile the cooler is currently
@@ -344,11 +354,18 @@ pub fn run() {
             Some(vec!["--minimized"]),
         ))
         .manage(CoolerHandle(Arc::new(Mutex::new(None))))
+        .manage(watchdog::ApplyStamp::default())
         .setup(|app| {
             let path = app.path().app_config_dir()?.join("settings.json");
             let first_run = !path.exists();
             app.manage(settings::SettingsHandle::load(path));
             enable_autostart_on_first_run(app.handle(), first_run);
+            watchdog::spawn(
+                app.handle().clone(),
+                app.state::<CoolerHandle>().inner().clone(),
+                app.state::<settings::SettingsHandle>().inner().clone(),
+                app.state::<watchdog::ApplyStamp>().inner().clone(),
+            );
             tray::create(app.handle())?;
             if !launched_minimized() {
                 tray::show_main_window(app.handle())?;

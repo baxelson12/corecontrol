@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import type { ReactElement } from "react";
 import { FluentProvider, webDarkTheme, webLightTheme } from "@fluentui/react-components";
+import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { match } from "ts-pattern";
 import { AppLayout } from "./layout/AppLayout";
@@ -19,11 +20,15 @@ import {
   selectCurvesDirty,
 } from "./store/curvesSlice";
 import { fanStatusPolled, selectFanStats } from "./store/statusSlice";
+import { savedProfileRestored } from "./store/toastsSlice";
 
 const appWindow = getCurrentWindow();
 
 /** How often the live fan status is polled, in milliseconds. */
 const STATUS_POLL_MS = 1000;
+
+/** Backend event fired when the watchdog pushed the saved profile back. */
+const PROFILE_RESTORED_EVENT = "saved-profile-restored";
 
 /**
  * Root view: loads the persisted settings, then kicks off cooler detection;
@@ -48,6 +53,15 @@ function App(): ReactElement {
       await dispatch(settingsLoadStarted());
       await dispatch(coolerScanStarted());
     })();
+  }, [dispatch]);
+
+  useEffect(() => {
+    const unlisten = listen(PROFILE_RESTORED_EVENT, () => {
+      dispatch(savedProfileRestored());
+    });
+    return () => {
+      void unlisten.then((stop) => stop()).catch(console.error);
+    };
   }, [dispatch]);
 
   useEffect(() => {
