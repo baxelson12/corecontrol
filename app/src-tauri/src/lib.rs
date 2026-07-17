@@ -1,4 +1,4 @@
-//! Tauri backend for the CoreLiquid desktop app.
+//! Tauri backend for the CoreControl desktop app.
 //!
 //! The backend is a thin IPC layer over the `coreliquid` control library.
 //! [`detect_cooler`] runs the startup detection scan and opens the first

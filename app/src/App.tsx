@@ -68,7 +68,7 @@ function App(): ReactElement {
   return (
     <FluentProvider theme={fluentTheme}>
       <AppLayout
-        title="AIO Cooler Control"
+        title="CoreControl"
         deviceLabel="Liquid cooler"
         deviceName={deviceName(detection)}
         theme={theme}

@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "CoreLiquid",
+  "productName": "CoreControl",
   "version": "0.1.0",
-  "identifier": "com.coreliquid.app",
+  "identifier": "com.corecontrol.app",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "CoreLiquid",
+        "title": "CoreControl",
         "decorations": false,
         "resizable": false,
         "width": 880,
