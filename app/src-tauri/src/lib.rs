@@ -8,8 +8,16 @@
 //! write took effect. The [`settings`] module persists the theme choice and
 //! the last applied profile across launches. The open device and the settings live in Tauri-managed state
 //! shared by the commands.
+//!
+//! The app lives in the notification area: the [`tray`] module owns the tray
+//! icon and its Open/Exit menu. The autostart entry (managed by the
+//! autostart plugin, enabled on first run) launches the exe with
+//! `--minimized`, which keeps the window hidden so a boot start lands in the
+//! tray only. A second launch of the exe reveals the running instance
+//! instead of starting another one.
 
 mod settings;
+mod tray;
 
 use std::sync::{Arc, Mutex};
 
@@ -300,6 +308,27 @@ async fn read_fan_profile(
         .map_err(|error| error.to_string())?
 }
 
+/// Whether this launch came from the autostart entry, which passes
+/// `--minimized` so a boot start stays hidden in the notification area.
+fn launched_minimized() -> bool {
+    std::env::args().any(|arg| arg == "--minimized")
+}
+
+/// Registers autostart on the very first launch (no settings file yet), so
+/// the app runs at boot right after installation. Task Manager's Startup
+/// apps page can disable it; later launches never re-enable it. Skipped in
+/// dev builds to keep debug binaries out of the startup entries.
+fn enable_autostart_on_first_run(app: &tauri::AppHandle, first_run: bool) {
+    use tauri_plugin_autostart::ManagerExt;
+
+    if !first_run || cfg!(debug_assertions) {
+        return;
+    }
+    if let Err(error) = app.autolaunch().enable() {
+        eprintln!("failed to enable autostart: {error}");
+    }
+}
+
 /// Builds and runs the Tauri application, registering the IPC handlers.
 ///
 /// # Panics
@@ -307,10 +336,23 @@ async fn read_fan_profile(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            tray::reveal_main_window(app);
+        }))
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec!["--minimized"]),
+        ))
         .manage(CoolerHandle(Arc::new(Mutex::new(None))))
         .setup(|app| {
             let path = app.path().app_config_dir()?.join("settings.json");
+            let first_run = !path.exists();
             app.manage(settings::SettingsHandle::load(path));
+            enable_autostart_on_first_run(app.handle(), first_run);
+            tray::create(app.handle())?;
+            if !launched_minimized() {
+                tray::show_main_window(app.handle())?;
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

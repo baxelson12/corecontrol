@@ -83,7 +83,7 @@ function App(): ReactElement {
         onRevert={() => dispatch(curvesReverted())}
         onApply={() => void dispatch(curvesApplied(series))}
         onDragStart={() => appWindow.startDragging().catch(console.error)}
-        onMinimize={() => appWindow.minimize().catch(console.error)}
+        onMinimize={() => appWindow.hide().catch(console.error)}
         onClose={() => appWindow.close().catch(console.error)}
       />
       <AppToaster />

@@ -24,6 +24,14 @@ directory, and the saved profile is pushed back to the cooler on startup.
 Errors (detection failure, a rejected or unconfirmed profile write) surface
 as toasts, with a retry offered when the cooler never confirms a write.
 
+The app lives in the notification area: a tray icon with an Open/Exit menu
+is always present, and launching the exe with `--minimized` (what the
+run-at-startup entry does) starts it hidden in the tray. Run-at-startup is
+registered on first launch; Task Manager's Startup apps page turns it off.
+Launching the exe a second time reveals the running instance instead of
+starting another one. The title bar minimize button hides the window to the
+tray (no taskbar entry); the close button exits the app, tray icon included.
+
 ## Prerequisites
 
 - Rust (stable) and [`just`](https://github.com/casey/just)
@@ -34,10 +42,11 @@ as toasts, with a retry offered when the cooler never confirms a write.
 ## Common tasks
 
 ```
-just check      # fmt + clippy + test the library
-just dev        # run the app with hot reload
-just win        # build the Windows exe + installers (run on Windows)
-just win-exe    # cross-compile just the Windows exe from Linux
+just check          # fmt + clippy + test the library
+just dev            # run the app with hot reload
+just win            # build the Windows exe + installers (run on Windows)
+just win-exe        # cross-compile just the Windows exe from Linux
+just win-installer  # cross-build the NSIS installer from Linux (needs nsis)
 ```
 
 See [`lib/README.md`](lib/README.md) for the library API and supported models.

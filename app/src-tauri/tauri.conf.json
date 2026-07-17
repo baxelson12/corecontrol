@@ -15,6 +15,7 @@
         "title": "CoreControl",
         "decorations": false,
         "resizable": false,
+        "visible": false,
         "width": 880,
         "height": 720
       }

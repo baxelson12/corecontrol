@@ -53,3 +53,11 @@ win: install
 win-exe: install
     cd app && pnpm build
     cargo xwin build --release -p corecontrol-app --features custom-protocol --target x86_64-pc-windows-msvc
+
+# Needs `makensis` on the PATH (apt install nsis). MSI still needs Windows;
+# use `win` for that. Artifacts land in
+# `target/x86_64-pc-windows-msvc/release/bundle/nsis/`.
+#
+# Cross-build the Windows NSIS installer from Linux.
+win-installer: install
+    cd app && pnpm tauri build --runner cargo-xwin --target x86_64-pc-windows-msvc --bundles nsis
