@@ -12,7 +12,7 @@
 //! pushes the saved profile back when they differ.
 //!
 //! The app lives in the notification area: the [`tray`] module owns the tray
-//! icon and its Open/Exit menu. The autostart entry (managed by the
+//! icon, its Open/Exit menu, and the hover tooltip with live fan readings. The autostart entry (managed by the
 //! autostart plugin, enabled on first run) launches the exe with
 //! `--minimized`, which keeps the window hidden so a boot start lands in the
 //! tray only. A second launch of the exe reveals the running instance
