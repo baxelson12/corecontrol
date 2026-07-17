@@ -37,8 +37,9 @@ function legalLength(points: readonly CurvePoint[]): boolean {
 
 /**
  * Validates a value from outside the typed world (an IPC reply, a settings
- * field) as a fan profile with firmware-legal curve lengths. Returns `null`
- * when the value is not one.
+ * field) as a fan profile with firmware-legal curve lengths.
+ *
+ * @returns The profile, or `null` when the value is not one.
  */
 export function parseProfile(value: unknown): FanProfile | null {
   return match<unknown, FanProfile | null>(value)
@@ -57,7 +58,11 @@ function sameCurve(a: readonly CurvePoint[], b: readonly CurvePoint[]): boolean 
   });
 }
 
-/** Whether two profiles prescribe the same curve on every channel. */
+/**
+ * Whether two profiles prescribe the same curve on every channel.
+ *
+ * @returns `true` when every channel matches point for point.
+ */
 export function sameProfile(a: FanProfile, b: FanProfile): boolean {
   return (
     sameCurve(a.radiators, b.radiators) &&
@@ -73,14 +78,20 @@ const CHANNELS = [
   { key: 'pump', name: 'Pump', color: SERIES_COLORS.pump },
 ] as const;
 
-/** Maps a backend profile to the three chart series, in display order. */
+/**
+ * Maps a backend profile to the three chart series, in display order.
+ *
+ * @returns One series per channel.
+ */
 export function profileToSeries(profile: FanProfile): readonly CurveSeries[] {
   return CHANNELS.map(({ key, name, color }) => ({ name, color, points: profile[key] }));
 }
 
 /**
- * Maps the chart series back to a backend profile, or `null` when a series
- * is missing. The series must be in the order `profileToSeries` produces.
+ * Maps the chart series back to a backend profile. The series must be in the
+ * order `profileToSeries` produces.
+ *
+ * @returns The profile, or `null` when a series is missing.
  */
 export function seriesToProfile(series: readonly CurveSeries[]): FanProfile | null {
   const [radiators, waterblock, pump] = series;

@@ -85,6 +85,8 @@ export interface AppLayoutProps {
  * The whole window: title bar, device header with theme toggle, channel
  * stat cards, and the fan curve card. Purely presentational; every piece of
  * state and behavior arrives through props.
+ *
+ * @returns The app layout.
  */
 export function AppLayout(props: AppLayoutProps): ReactElement {
   const styles = useStyles();

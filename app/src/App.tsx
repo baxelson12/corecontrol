@@ -29,6 +29,8 @@ const PROFILE_RESTORED_EVENT = 'saved-profile-restored';
  * Root view: loads the persisted settings, then kicks off cooler detection;
  * once a cooler is open it pushes the saved fan profile to the device and
  * polls it for live status, binding the store to the presentational layout.
+ *
+ * @returns The themed app.
  */
 function App(): ReactElement {
   const dispatch = useAppDispatch();

@@ -6,17 +6,18 @@
 //! [`apply_fan_profile`] writes the fan curve profile; [`read_fan_profile`]
 //! reads back the profile the device is running, so the UI can confirm a
 //! write took effect. The [`settings`] module persists the theme choice and
-//! the last applied profile across launches. The open device and the settings live in Tauri-managed state
-//! shared by the commands. The [`watchdog`] module keeps a background thread
-//! that periodically re-checks the running profile against the saved one and
-//! pushes the saved profile back when they differ.
+//! the last applied profile across launches. The open device and the
+//! settings live in Tauri-managed state shared by the commands. The
+//! [`watchdog`] module keeps a background thread that periodically re-checks
+//! the running profile against the saved one and pushes the saved profile
+//! back when they differ.
 //!
 //! The app lives in the notification area: the [`tray`] module owns the tray
-//! icon, its Open/Exit menu, and the hover tooltip with live fan readings. The autostart entry (managed by the
-//! autostart plugin, enabled on first run) launches the exe with
-//! `--minimized`, which keeps the window hidden so a boot start lands in the
-//! tray only. A second launch of the exe reveals the running instance
-//! instead of starting another one.
+//! icon, its Open/Exit menu, and the hover tooltip with live fan readings.
+//! The autostart entry (managed by the autostart plugin, enabled on first
+//! run) launches the exe with `--minimized`, which keeps the window hidden
+//! so a boot start lands in the tray only. A second launch of the exe
+//! reveals the running instance instead of starting another one.
 
 mod settings;
 mod tray;

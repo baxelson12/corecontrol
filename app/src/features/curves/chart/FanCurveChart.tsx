@@ -36,6 +36,8 @@ export interface FanCurveChartProps {
 /**
  * The fan curve plot: temperature on x, duty on y, one draggable line per
  * channel. Fully controlled; it holds no curve state of its own.
+ *
+ * @returns The chart SVG.
  */
 export function FanCurveChart({
   series,

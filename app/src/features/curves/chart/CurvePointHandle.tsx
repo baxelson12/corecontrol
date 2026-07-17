@@ -30,6 +30,8 @@ export interface CurvePointHandleProps {
 /**
  * A draggable curve point. Captures the pointer on press and reports each
  * movement as a chart-domain point, clamped to the plot area.
+ *
+ * @returns The point handle circle.
  */
 export function CurvePointHandle({
   point,

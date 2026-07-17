@@ -11,7 +11,11 @@ import {
   tempToX,
 } from './geometry';
 
-/** Minor grid lines every 5 °C and 5 % duty, plus the top border. */
+/**
+ * Minor grid lines every 5 °C and 5 % duty, plus the top border.
+ *
+ * @returns The grid layer.
+ */
 export function ChartGrid({ tempMax }: { readonly tempMax: number }): ReactElement {
   const vCount = Math.max(0, Math.ceil(tempMax / GRID_STEP) - 1);
   const hCount = DUTY_MAX / GRID_STEP - 1;

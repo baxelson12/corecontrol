@@ -13,7 +13,8 @@ export interface CurveSeriesLayerProps {
 
 /**
  * One curve: optional soft fill, the line itself, and a handle per point.
- * A series without points renders nothing.
+ *
+ * @returns The series layer, or null for a series without points.
  */
 export function CurveSeriesLayer({
   series,

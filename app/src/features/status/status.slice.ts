@@ -35,6 +35,8 @@ const statusSlice = createSlice({
 /**
  * Maps the current readings to the three stat cards, in design order. Cards
  * carry `null` values until the first report arrives.
+ *
+ * @returns One card per cooling channel.
  */
 export function selectFanStats(state: { readonly status: StatusState }): readonly StatCardProps[] {
   const readings = state.status.readings;

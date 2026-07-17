@@ -25,6 +25,8 @@ const coolerPattern = P.shape({
 /**
  * Runs the backend detection scan and folds every outcome, including
  * failure, into a `Detection` value. Never throws.
+ *
+ * @returns The resulting detection state.
  */
 export async function detectCooler(): Promise<Detection> {
   try {
@@ -39,7 +41,11 @@ export async function detectCooler(): Promise<Detection> {
   }
 }
 
-/** Maps a detection state to the product-name line of the device header. */
+/**
+ * Maps a detection state to the product-name line of the device header.
+ *
+ * @returns The text to display.
+ */
 export function deviceName(detection: Detection): string {
   return match(detection)
     .with({ state: 'detecting' }, () => 'Detecting cooler…')

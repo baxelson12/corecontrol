@@ -20,6 +20,8 @@ const EMPTY_SETTINGS: AppSettings = { theme: null, fanProfile: null };
  * Loads the persisted settings. Folds failures (IPC error, malformed reply,
  * illegal saved profile) into the empty settings so the caller falls back to
  * the system theme and the default curves. Never throws.
+ *
+ * @returns The persisted settings, with unusable fields nulled out.
  */
 export async function loadSettings(): Promise<AppSettings> {
   try {

@@ -58,6 +58,8 @@ function unconfirmedToast(onRetry: () => void, onDismiss: () => void): ReactElem
  * Bridges the store to Fluent's imperative toast API: drains the queued
  * error toasts, and keeps one persistent toast tracking the apply flow
  * (spinner while the device confirms, retry offer when it never does).
+ *
+ * @returns The mounted toaster outlet.
  */
 export function AppToaster(): ReactElement {
   const toasterId = useId('app-toaster');

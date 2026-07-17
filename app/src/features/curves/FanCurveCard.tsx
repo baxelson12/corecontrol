@@ -33,6 +33,8 @@ export interface FanCurveCardProps {
  * The fan curve card: title, drag hint, and the chart. Curve state (unsaved
  * edits, no saved profile) is reported by the pill in the layout, below the
  * card.
+ *
+ * @returns The chart card.
  */
 export function FanCurveCard({
   series,

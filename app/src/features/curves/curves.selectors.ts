@@ -13,6 +13,8 @@ function sameSeries(a: CurveSeries, b: CurveSeries): boolean {
  * Whether the chart shows state the device is not running: edits differing
  * from the applied curves, or curves (saved or fallback defaults) the device
  * has not yet confirmed.
+ *
+ * @returns `true` when the shown curves are not confirmed on the device.
  */
 export function selectCurvesDirty(state: { readonly curves: CurvesState }): boolean {
   const { edited, applied, source } = state.curves;

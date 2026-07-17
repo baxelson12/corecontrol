@@ -4,7 +4,11 @@ import { useId } from 'react';
 import { match } from 'ts-pattern';
 import type { ThemeName } from './theme.types';
 
-/** Sun glyph, shown in dark mode to offer switching to light. */
+/**
+ * Sun glyph, shown in dark mode to offer switching to light.
+ *
+ * @returns The sun icon.
+ */
 function SunIcon(): ReactElement {
   return (
     <svg
@@ -30,7 +34,11 @@ function SunIcon(): ReactElement {
   );
 }
 
-/** Crescent moon glyph, shown in light mode to offer switching to dark. */
+/**
+ * Crescent moon glyph, shown in light mode to offer switching to dark.
+ *
+ * @returns The moon icon.
+ */
 function MoonIcon(): ReactElement {
   const maskId = useId();
   return (
@@ -45,6 +53,7 @@ function MoonIcon(): ReactElement {
 }
 
 export interface ThemeToggleProps {
+  /** The app's current theme. */
   readonly theme: ThemeName;
   readonly onToggle: () => void;
 }
@@ -52,6 +61,8 @@ export interface ThemeToggleProps {
 /**
  * Icon button that switches between light and dark theme. Shows the theme
  * you would switch to: a sun while dark, a moon while light.
+ *
+ * @returns The toggle button.
  */
 export function ThemeToggle({ theme, onToggle }: ThemeToggleProps): ReactElement {
   const icon = match(theme)
