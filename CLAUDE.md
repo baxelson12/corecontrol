@@ -27,4 +27,5 @@ release builds; the user handles those.
 - Library (`lib/`): `just check` (fmt + clippy `-D warnings` + tests)
 - App backend (`app/src-tauri/`): `just check-app`
 - Frontend (`app/src/`): `just check-ui` (tsc + Biome lint/format check).
-  Biome config lives in `app/biome.json`; fix findings, don't suppress them.
+  Biome config lives in `app/biome.json`. Fix findings; only when a rule
+  genuinely doesn't apply, use a `biome-ignore` comment stating why.

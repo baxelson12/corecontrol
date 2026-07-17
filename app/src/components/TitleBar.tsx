@@ -69,6 +69,7 @@ export function TitleBar({ title, onDragStart, onMinimize, onClose }: TitleBarPr
   }
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: pointer-only window drag region; keyboard window moves go through the OS
     <header className={styles.root} onMouseDown={handleMouseDown}>
       <span className={styles.appMark} />
       <Caption1 className={styles.title}>{title}</Caption1>
@@ -79,7 +80,7 @@ export function TitleBar({ title, onDragStart, onMinimize, onClose }: TitleBarPr
           aria-label="Minimize"
           onClick={onMinimize}
         >
-          <svg width="10" height="10" viewBox="0 0 10 10">
+          <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10">
             <line x1="0" y1="5" x2="10" y2="5" stroke="currentColor" />
           </svg>
         </button>
@@ -89,7 +90,7 @@ export function TitleBar({ title, onDragStart, onMinimize, onClose }: TitleBarPr
           aria-label="Close"
           onClick={onClose}
         >
-          <svg width="10" height="10" viewBox="0 0 10 10">
+          <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10">
             <line x1="0" y1="0" x2="10" y2="10" stroke="currentColor" />
             <line x1="10" y1="0" x2="0" y2="10" stroke="currentColor" />
           </svg>

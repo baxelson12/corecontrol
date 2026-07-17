@@ -8,6 +8,7 @@ import type { ThemeName } from './theme.types';
 function SunIcon(): ReactElement {
   return (
     <svg
+      aria-hidden="true"
       width="16"
       height="16"
       viewBox="0 0 16 16"
@@ -33,7 +34,7 @@ function SunIcon(): ReactElement {
 function MoonIcon(): ReactElement {
   const maskId = useId();
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16">
+    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16">
       <mask id={maskId}>
         <rect width="16" height="16" fill="#fff" />
         <circle cx="11.5" cy="4.5" r="5.6" fill="#000" />

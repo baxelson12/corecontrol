@@ -36,6 +36,7 @@ export function CurveSeriesLayer({
       <path d={d} fill="none" stroke={series.color} strokeWidth={2} strokeLinejoin="round" />
       {series.points.map((pt, pointIndex) => (
         <CurvePointHandle
+          // biome-ignore lint/suspicious/noArrayIndexKey: points are positional with a fixed count; a temp-based key would remount the handle mid-drag
           key={pointIndex}
           point={pt}
           color={series.color}
