@@ -11,10 +11,8 @@ const useStyles = makeStyles({
     borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
   },
   appMark: {
-    width: '14px',
-    height: '14px',
-    borderRadius: tokens.borderRadiusMedium,
-    backgroundColor: tokens.colorBrandBackground,
+    width: '16px',
+    height: '16px',
   },
   title: {
     flexGrow: 1,
@@ -56,7 +54,7 @@ export interface TitleBarProps {
 }
 
 /**
- * Custom window title bar: accent app mark, title, and Windows-style
+ * Custom window title bar: app icon, title, and Windows-style
  * minimize and close buttons. The actual window commands are wired up by
  * the caller.
  *
@@ -74,7 +72,7 @@ export function TitleBar({ title, onDragStart, onMinimize, onClose }: TitleBarPr
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: pointer-only window drag region; keyboard window moves go through the OS
     <header className={styles.root} onMouseDown={handleMouseDown}>
-      <span className={styles.appMark} />
+      <img className={styles.appMark} src="/corecontrol.svg" alt="" draggable={false} />
       <Caption1 className={styles.title}>{title}</Caption1>
       <div className={styles.buttons}>
         <button
