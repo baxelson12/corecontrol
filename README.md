@@ -3,6 +3,10 @@
 A Rust workspace for controlling MSI MEG/MPG Coreliquid AIO coolers, with
 CoreControl, a Tauri desktop app, on top.
 
+<p align="center">
+  <img src="docs/screenshot.png" width="600" alt="CoreControl main window">
+</p>
+
 ## Layout
 
 ```
