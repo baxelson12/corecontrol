@@ -25,6 +25,11 @@ const useStyles = makeStyles({
     strokeWidth: '3px',
     paintOrder: 'stroke',
   },
+  row: {
+    transitionProperty: 'opacity',
+    transitionDuration: '0.15s',
+    transitionTimingFunction: 'ease',
+  },
 });
 
 /** One label with its resolved vertical position. */
@@ -71,6 +76,12 @@ function placeLabels(series: readonly CurveSeries[]): readonly PlacedLabel[] {
   return placed;
 }
 
+export interface CurveLabelsProps {
+  readonly series: readonly CurveSeries[];
+  /** Name of the selected series; the other labels fade. Null fades none. */
+  readonly activeName: string | null;
+}
+
 /**
  * Direct series labels at the left end of each curve, where the lines are
  * furthest apart: a short dash in the series color plus the channel name in
@@ -78,12 +89,16 @@ function placeLabels(series: readonly CurveSeries[]): readonly PlacedLabel[] {
  *
  * @returns The labels layer.
  */
-export function CurveLabels({ series }: { readonly series: readonly CurveSeries[] }): ReactElement {
+export function CurveLabels({ series, activeName }: CurveLabelsProps): ReactElement {
   const styles = useStyles();
   return (
     <g pointerEvents="none">
       {placeLabels(series).map((label) => (
-        <g key={label.name}>
+        <g
+          key={label.name}
+          className={styles.row}
+          opacity={activeName !== null && label.name !== activeName ? 0.35 : 1}
+        >
           <line
             x1={LABEL_X}
             x2={LABEL_X + SWATCH_LENGTH}

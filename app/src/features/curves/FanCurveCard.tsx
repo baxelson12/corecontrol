@@ -48,7 +48,9 @@ export function FanCurveCard({
     <div className={styles.root}>
       <div className={styles.header}>
         <Body1Strong>Fan curve</Body1Strong>
-        <Caption1 className={styles.hint}>Drag points to adjust</Caption1>
+        <Caption1 className={styles.hint}>
+          Drag points to adjust · click a curve to focus it
+        </Caption1>
       </div>
       <FanCurveChart
         series={series}
