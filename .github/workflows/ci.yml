@@ -1,5 +1,5 @@
-# Runs the same checks as `just check` / `just check-ui`, then builds the
-# Windows installers and uploads them as a workflow artifact.
+# Runs the same checks as `just check` / `just check-ui`. Installer builds
+# happen in the release workflow, on version tags only.
 name: CI
 
 on:
@@ -47,30 +47,3 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec tsc --noEmit
       - run: pnpm lint
-
-  windows-installer:
-    name: Windows installer
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-          cache-dependency-path: app/pnpm-lock.yaml
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - run: pnpm install --frozen-lockfile
-        working-directory: app
-      - run: pnpm tauri build
-        working-directory: app
-      - uses: actions/upload-artifact@v4
-        with:
-          name: corecontrol-installers
-          path: |
-            target/release/bundle/nsis/*.exe
-            target/release/bundle/msi/*.msi
-          if-no-files-found: error

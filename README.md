@@ -60,10 +60,9 @@ just win-installer  # cross-build the NSIS installer from Linux (needs nsis)
 
 ## CI and releases
 
-GitHub Actions (`.github/workflows/`) runs on every push to `main` and on
-pull requests: the library checks, the frontend checks, and a Windows
-installer build whose NSIS/MSI output is attached to the run as a workflow
-artifact. Pushing a `v*` tag builds the installers and drafts a GitHub
-release with them attached; publish the draft to make it public.
+GitHub Actions (`.github/workflows/`) runs the library and frontend checks
+on every push to `main` and on pull requests. Pushing a `v*` tag builds the
+Windows installers and drafts a GitHub release with them attached; publish
+the draft to make it public.
 
 See [`lib/README.md`](lib/README.md) for the library API and supported models.
