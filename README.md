@@ -54,6 +54,7 @@ just dev            # run the app with hot reload
 just win            # build the Windows exe + installers (run on Windows)
 just win-exe        # cross-compile just the Windows exe from Linux
 just win-installer  # cross-build the NSIS installer from Linux (needs nsis)
+just patch          # bump the patch version, commit, and tag (minor/major too)
 ```
 
 ## CI and releases
@@ -62,5 +63,11 @@ GitHub Actions (`.github/workflows/`) runs the library and frontend checks
 on every push to `main` and on pull requests. Pushing a `v*` tag builds the
 Windows installers and drafts a GitHub release with them attached; publish
 the draft to make it public.
+
+To cut a release, run `just patch`, `just minor`, or `just major`. It bumps
+the app version everywhere it lives, commits, and creates the matching tag.
+The tag must match the app version or the workflow attaches the installers
+to the wrong release. Nothing is pushed; release with the printed
+`git push` command.
 
 See [`lib/README.md`](lib/README.md) for the library API and supported models.
