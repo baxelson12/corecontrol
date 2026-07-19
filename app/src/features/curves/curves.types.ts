@@ -28,12 +28,22 @@ export type CurvePointMoveHandler = (
  */
 export type CurveSource = 'device' | 'saved' | 'defaults';
 
-/** Channel colors from the design. */
-export const SERIES_COLORS = {
+/** CSS color per cooling channel, shared by the chart and the stat cards. */
+export interface ChannelColors {
+  readonly radiatorFans: string;
+  readonly unitFan: string;
+  readonly pump: string;
+}
+
+/** Default channel colors from the design. */
+export const SERIES_COLORS: ChannelColors = {
   radiatorFans: 'oklch(0.68 0.14 235)',
   unitFan: 'oklch(0.68 0.14 155)',
   pump: 'oklch(0.68 0.14 330)',
-} as const;
+};
+
+/** Default opacity of the other curves while one is focused. */
+export const DEFAULT_DIMMED_OPACITY = 0.35;
 
 /** Where a profile write currently stands, driving the apply toast. */
 export type ApplyPhase =

@@ -1,8 +1,9 @@
 //! Notification-area (system tray) integration.
 //!
 //! The tray icon lives for the whole app run. Its context menu offers
-//! **Open**, which reveals the main window, and **Exit**, which quits the
-//! app; a left click on the icon also reveals the window. Hovering the icon
+//! **Open**, which reveals the main window, **Settings**, which reveals it
+//! on the settings page, and **Exit**, which quits the app; a left click on
+//! the icon also reveals the window. Hovering the icon
 //! refreshes its tooltip with live fan and pump readings, so the speeds are
 //! a mouse-over away while the window sits hidden. The reveal helper is
 //! shared with the single-instance hook in `lib.rs`, so launching the exe
@@ -10,7 +11,7 @@
 
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager};
 
 use crate::{CoolerHandle, FanReadings};
 
@@ -20,8 +21,12 @@ const TRAY_ID: &str = "main";
 const TOOLTIP_IDLE: &str = "CoreControl";
 /// Menu id of the tray entry that reveals the main window.
 const MENU_OPEN: &str = "open";
+/// Menu id of the tray entry that reveals the window on the settings page.
+const MENU_SETTINGS: &str = "settings";
 /// Menu id of the tray entry that quits the app.
 const MENU_EXIT: &str = "exit";
+/// Event asking the frontend to show the settings page.
+const OPEN_SETTINGS_EVENT: &str = "open-settings";
 
 /// Shows, restores, and focuses the main window.
 ///
@@ -91,15 +96,26 @@ fn refresh_tooltip(app: &AppHandle) {
     });
 }
 
-/// Builds the tray icon with its Open/Exit menu and installs the click
-/// handlers. Called once from setup.
+/// Reveals the main window on the settings page: shows the window, then
+/// asks the frontend to switch views. A failed emit is logged; the window
+/// is still revealed.
+fn reveal_settings(app: &AppHandle) {
+    reveal_main_window(app);
+    if let Err(error) = app.emit(OPEN_SETTINGS_EVENT, ()) {
+        eprintln!("failed to emit the open-settings event: {error}");
+    }
+}
+
+/// Builds the tray icon with its Open/Settings/Exit menu and installs the
+/// click handlers. Called once from setup.
 ///
 /// # Errors
 /// Returns `Err` when the menu or the tray icon cannot be created.
 pub fn create(app: &AppHandle) -> tauri::Result<()> {
     let open = MenuItem::with_id(app, MENU_OPEN, "Open", true, None::<&str>)?;
+    let settings = MenuItem::with_id(app, MENU_SETTINGS, "Settings", true, None::<&str>)?;
     let exit = MenuItem::with_id(app, MENU_EXIT, "Exit", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&open, &exit])?;
+    let menu = Menu::with_items(app, &[&open, &settings, &exit])?;
 
     let mut tray = TrayIconBuilder::with_id(TRAY_ID)
         .menu(&menu)
@@ -108,6 +124,8 @@ pub fn create(app: &AppHandle) -> tauri::Result<()> {
         .on_menu_event(|app, event| {
             if event.id.as_ref() == MENU_OPEN {
                 reveal_main_window(app);
+            } else if event.id.as_ref() == MENU_SETTINGS {
+                reveal_settings(app);
             } else if event.id.as_ref() == MENU_EXIT {
                 app.exit(0);
             }

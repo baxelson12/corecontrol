@@ -58,6 +58,15 @@ const toastsSlice = createSlice({
         'The cooler had drifted from the saved profile; it was pushed back.',
       );
     },
+    /** The startup check found a newer release on GitHub. */
+    updateAvailable(state, action: PayloadAction<string>): ToastsState {
+      return enqueue(
+        state,
+        'success',
+        'Update available',
+        `CoreControl ${action.payload} is out; grab it from GitHub releases.`,
+      );
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(coolerScanStarted.fulfilled, (state, action): ToastsState => {
@@ -99,5 +108,9 @@ const toastsSlice = createSlice({
   },
 });
 
-export const { delivered: toastDelivered, restored: savedProfileRestored } = toastsSlice.actions;
+export const {
+  delivered: toastDelivered,
+  restored: savedProfileRestored,
+  updateAvailable,
+} = toastsSlice.actions;
 export const toastsReducer = toastsSlice.reducer;

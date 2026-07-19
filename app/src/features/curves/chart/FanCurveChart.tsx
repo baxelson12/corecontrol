@@ -47,6 +47,8 @@ export interface FanCurveChartProps {
   readonly showGrid?: boolean | undefined;
   /** Soft fill under each curve. Defaults to off. */
   readonly showFill?: boolean | undefined;
+  /** Opacity of unfocused curves while one is focused, 0–1. */
+  readonly dimmedOpacity?: number | undefined;
   /**
    * Called repeatedly while a point is dragged, with the point clamped to the
    * chart domain. Snapping and ordering between neighbors are the caller's
@@ -69,6 +71,7 @@ export function FanCurveChart({
   tempMax = DEFAULT_TEMP_MAX,
   showGrid = true,
   showFill = false,
+  dimmedOpacity,
   onPointMove,
 }: FanCurveChartProps): ReactElement {
   const styles = useStyles();
@@ -133,6 +136,7 @@ export function FanCurveChart({
           tempMax={safeTempMax}
           showFill={showFill}
           dimmed={active !== null && index !== active}
+          dimmedOpacity={dimmedOpacity}
         />
       ))}
       <CurveLabels series={series} activeName={activeName} />

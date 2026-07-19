@@ -20,23 +20,32 @@ The app consumes the library through the `Cooler` facade. Startup device
 detection (`detect_cooler`), live status polling (`fan_status`, speeds and
 duties for the stat cards), and the fan curve profile (`apply_fan_profile`,
 confirmed by reading the running profile back with `read_fan_profile`)
-are wired end to end. The app owns the profile: the applied curves and the
-theme choice persist in `settings.json` under the per-user app config
-directory, and the saved profile is pushed back to the cooler on startup.
-A background watchdog re-checks the running profile every five minutes and
-pushes the saved profile back if the device has drifted (a firmware reset,
-another tool), even while the app sits in the tray; a restore shows a toast
-when the window is open. Errors (detection failure, a rejected or
-unconfirmed profile write) surface as toasts, with a retry offered when the
-cooler never confirms a write.
+are wired end to end. The app owns the profile: the applied curves, the
+theme choice, and the settings-page preferences persist in `settings.json`
+under the per-user app config directory, and the saved profile is pushed
+back to the cooler on startup. A background watchdog re-checks the running
+profile every five minutes and pushes the saved profile back if the device
+has drifted (a firmware reset, another tool), even while the app sits in
+the tray; a restore shows a toast, or an OS notification while the window
+is hidden. Errors (detection failure, a rejected or unconfirmed profile
+write) surface as toasts, with a retry offered when the cooler never
+confirms a write.
 
-The app lives in the notification area: a tray icon with an Open/Exit menu
-is always present, and launching the exe with `--minimized` (what the
-run-at-startup entry does) starts it hidden in the tray. Run-at-startup is
-registered on first launch; Task Manager's Startup apps page turns it off.
-Launching the exe a second time reveals the running instance instead of
-starting another one. The title bar minimize button hides the window to the
-tray (no taskbar entry); the close button exits the app, tray icon included.
+The gear button opens the settings page: theme (light, dark, or follow the
+system), the chart look (a color per channel, picked from preset swatches
+or a free color picker, and how strongly the other curves dim while one is
+focused), what the close button does, the profile watchdog, restore
+notifications, and the startup update check, which compares the newest
+GitHub release against the running version and announces a newer one.
+
+The app lives in the notification area: a tray icon with an
+Open/Settings/Exit menu is always present, and launching the exe with
+`--minimized` (what the run-at-startup entry does) starts it hidden in the
+tray. Run-at-startup is registered on first launch; Task Manager's Startup
+apps page turns it off. Launching the exe a second time reveals the running
+instance instead of starting another one. The title bar minimize button
+hides the window to the tray (no taskbar entry); the close button exits the
+app by default, or hides to the tray when the settings page says so.
 
 ## Prerequisites
 
