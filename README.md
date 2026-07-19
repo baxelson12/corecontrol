@@ -32,7 +32,9 @@ write) surface as toasts, with a retry offered when the cooler never
 confirms a write.
 
 The gear button opens the settings page: theme (light, dark, or follow the
-system), what the close button does, the profile watchdog, restore
+system), the chart look (a color per channel, picked from preset swatches
+or a free color picker, and how strongly the other curves dim while one is
+focused), what the close button does, the profile watchdog, restore
 notifications, and the startup update check, which compares the newest
 GitHub release against the running version and announces a newer one.
 

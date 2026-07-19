@@ -1,7 +1,8 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import { DEFAULT_DIMMED_OPACITY, SERIES_COLORS } from '../curves/curves.types';
 import type { Preferences } from './settings.ipc';
-import { savePreferences } from './settings.ipc';
+import { savePreferencesDebounced } from './settings.ipc';
 import { settingsLoadStarted } from './settings.thunks';
 
 export interface SettingsState {
@@ -17,6 +18,8 @@ const DEFAULT_PREFERENCES: Preferences = {
   watchdogEnabled: true,
   restoreNotify: true,
   updateCheck: true,
+  channelColors: SERIES_COLORS,
+  dimmedOpacity: DEFAULT_DIMMED_OPACITY,
 };
 
 const initialState: SettingsState = { open: false, preferences: DEFAULT_PREFERENCES };
@@ -45,6 +48,8 @@ const settingsSlice = createSlice({
         watchdogEnabled: action.payload.watchdogEnabled ?? DEFAULT_PREFERENCES.watchdogEnabled,
         restoreNotify: action.payload.restoreNotify ?? DEFAULT_PREFERENCES.restoreNotify,
         updateCheck: action.payload.updateCheck ?? DEFAULT_PREFERENCES.updateCheck,
+        channelColors: action.payload.channelColors ?? DEFAULT_PREFERENCES.channelColors,
+        dimmedOpacity: action.payload.dimmedOpacity ?? DEFAULT_PREFERENCES.dimmedOpacity,
       };
     });
   },
@@ -52,17 +57,18 @@ const settingsSlice = createSlice({
 
 /**
  * Applies a partial preference change and persists the merged result. The
- * change lands before the disk write; a failed write only logs, the UI
- * keeps the new preferences.
+ * change lands immediately; the disk write is debounced so a slider or
+ * color drag costs one write, and a failed write only logs, the UI keeps
+ * the new preferences.
  */
 export const preferencesChanged = createAsyncThunk<
   void,
   Partial<Preferences>,
   { state: { settings: SettingsState } }
->('settings/changeRequested', async (change, { dispatch, getState }) => {
+>('settings/changeRequested', (change, { dispatch, getState }) => {
   const merged = { ...getState().settings.preferences, ...change };
   dispatch(settingsSlice.actions.preferencesSet(merged));
-  await savePreferences(merged);
+  savePreferencesDebounced(merged);
 });
 
 export const { opened: settingsOpened, closed: settingsClosed } = settingsSlice.actions;

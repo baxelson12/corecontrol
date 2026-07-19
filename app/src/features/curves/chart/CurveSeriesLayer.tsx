@@ -1,6 +1,7 @@
 import { makeStyles } from '@fluentui/react-components';
 import type { ReactElement } from 'react';
 import type { CurveSeries } from '../curves.types';
+import { DEFAULT_DIMMED_OPACITY } from '../curves.types';
 import { CurvePointHandle } from './CurvePointHandle';
 import { linePath, PLOT_BOTTOM, PLOT_LEFT, PLOT_RIGHT } from './geometry';
 
@@ -21,6 +22,8 @@ export interface CurveSeriesLayerProps {
   readonly showFill: boolean;
   /** Faded rendering while another series holds the selection. */
   readonly dimmed: boolean;
+  /** Opacity used while dimmed, 0–1. Defaults to 0.35. */
+  readonly dimmedOpacity?: number | undefined;
 }
 
 /**
@@ -35,12 +38,14 @@ export function CurveSeriesLayer({
   tempMax,
   showFill,
   dimmed,
+  dimmedOpacity = DEFAULT_DIMMED_OPACITY,
 }: CurveSeriesLayerProps): ReactElement | null {
   const styles = useStyles();
   if (series.points.length === 0) return null;
   const d = linePath(series.points, tempMax);
+  const safeDimmedOpacity = Math.min(1, Math.max(0, dimmedOpacity));
   return (
-    <g className={styles.layer} opacity={dimmed ? 0.35 : 1}>
+    <g className={styles.layer} opacity={dimmed ? safeDimmedOpacity : 1}>
       {showFill && (
         <path
           d={`${d} L${PLOT_RIGHT} ${PLOT_BOTTOM} L${PLOT_LEFT} ${PLOT_BOTTOM} Z`}

@@ -26,6 +26,8 @@ export interface FanCurveCardProps {
   readonly tempMax?: number | undefined;
   readonly showGrid?: boolean | undefined;
   readonly showFill?: boolean | undefined;
+  /** Opacity of unfocused curves while one is focused, 0–1. */
+  readonly dimmedOpacity?: number | undefined;
   readonly onPointMove?: CurvePointMoveHandler | undefined;
 }
 
@@ -41,6 +43,7 @@ export function FanCurveCard({
   tempMax,
   showGrid,
   showFill,
+  dimmedOpacity,
   onPointMove,
 }: FanCurveCardProps): ReactElement {
   const styles = useStyles();
@@ -57,6 +60,7 @@ export function FanCurveCard({
         tempMax={tempMax}
         showGrid={showGrid}
         showFill={showFill}
+        dimmedOpacity={dimmedOpacity}
         onPointMove={onPointMove}
       />
     </div>

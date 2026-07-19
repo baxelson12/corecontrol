@@ -1,4 +1,5 @@
-import type { ApplyPhase, CurveSeries, CurvesState } from './curves.types';
+import { createSelector } from '@reduxjs/toolkit';
+import type { ApplyPhase, ChannelColors, CurveSeries, CurvesState } from './curves.types';
 
 /** Whether two series match in name, color, and every point. */
 function sameSeries(a: CurveSeries, b: CurveSeries): boolean {
@@ -30,3 +31,26 @@ export function selectCurvesDirty(state: { readonly curves: CurvesState }): bool
 export function selectApplyPhase(state: { readonly curves: CurvesState }): ApplyPhase {
   return state.curves.applyPhase;
 }
+
+/** The slices the colored-series selector reads. */
+interface ColoredSeriesInput {
+  readonly curves: CurvesState;
+  readonly settings: { readonly preferences: { readonly channelColors: ChannelColors } };
+}
+
+/**
+ * The edited curves with the user's channel colors applied, for display.
+ * Purely cosmetic: dirty checks and profile writes use the raw edited
+ * series, whose baked-in colors never change. Memoized so the chart only
+ * re-renders when a curve or a color actually changes.
+ */
+export const selectColoredSeries = createSelector(
+  [
+    (state: ColoredSeriesInput) => state.curves.edited,
+    (state: ColoredSeriesInput) => state.settings.preferences.channelColors,
+  ],
+  (edited, colors): readonly CurveSeries[] => {
+    const order = [colors.radiatorFans, colors.unitFan, colors.pump];
+    return edited.map((series, index) => ({ ...series, color: order[index] ?? series.color }));
+  },
+);

@@ -4,7 +4,11 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import type { ReactElement } from 'react';
 import { useCallback, useEffect } from 'react';
 import { match } from 'ts-pattern';
-import { selectApplyPhase, selectCurvesDirty } from './features/curves/curves.selectors';
+import {
+  selectApplyPhase,
+  selectColoredSeries,
+  selectCurvesDirty,
+} from './features/curves/curves.selectors';
 import { curvePointMoved, curvesReverted } from './features/curves/curves.slice';
 import { curvesApplied, savedProfilePushStarted } from './features/curves/curves.thunks';
 import { deviceName } from './features/detection/detection.ipc';
@@ -104,6 +108,7 @@ function App(): ReactElement {
   const preferences = useAppSelector((state) => state.settings.preferences);
   const detection = useAppSelector((state) => state.detection);
   const series = useAppSelector((state) => state.curves.edited);
+  const coloredSeries = useAppSelector(selectColoredSeries);
   const curveSource = useAppSelector((state) => state.curves.source);
   const dirty = useAppSelector(selectCurvesDirty);
   const applyPhase = useAppSelector(selectApplyPhase);
@@ -159,7 +164,8 @@ function App(): ReactElement {
           deviceLabel="Liquid cooler"
           deviceName={deviceName(detection)}
           stats={stats}
-          series={series}
+          series={coloredSeries}
+          dimmedOpacity={preferences.dimmedOpacity}
           dirty={dirty && coolerFound && applyPhase !== 'verifying'}
           curveSource={curveSource}
           onOpenSettings={() => dispatch(settingsOpened())}

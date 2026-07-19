@@ -34,10 +34,25 @@ pub enum CloseBehavior {
     Tray,
 }
 
+/// CSS color per cooling channel, as chosen on the settings page. The
+/// strings are opaque to the backend; the frontend validates them as
+/// paintable colors on load.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChannelColors {
+    /// Color of the radiator-fan curve and stat card.
+    pub radiator_fans: String,
+    /// Color of the unit-fan curve and stat card.
+    pub unit_fan: String,
+    /// Color of the pump curve and stat card.
+    pub pump: String,
+}
+
 /// Everything the app persists between launches. An absent field means
 /// "never set": the UI then falls back to the system theme preference, the
 /// design-default curves, and the default preferences (close exits, watchdog
-/// on, restore notifications on, update check on).
+/// on, restore notifications on, update check on, design channel colors,
+/// focus dimming at 0.35).
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct AppSettings {
@@ -56,12 +71,17 @@ pub struct AppSettings {
     /// Whether startup checks GitHub for a newer release, or `None` for the
     /// default (on).
     pub update_check: Option<bool>,
+    /// Chart channel colors, or `None` for the design defaults.
+    pub channel_colors: Option<ChannelColors>,
+    /// Opacity of unfocused curves while one is focused, 0–1, or `None`
+    /// for the default (0.35).
+    pub dimmed_opacity: Option<f64>,
 }
 
 /// The preferences the settings page saves in one piece: everything in
 /// [`AppSettings`] except the theme and the fan profile, which have their
 /// own save commands.
-#[derive(Debug, Clone, Copy, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Preferences {
     /// What the close button does with the window.
@@ -72,6 +92,44 @@ pub struct Preferences {
     pub restore_notify: bool,
     /// Whether startup checks GitHub for a newer release.
     pub update_check: bool,
+    /// CSS color per cooling channel.
+    pub channel_colors: ChannelColors,
+    /// Opacity of unfocused curves while one is focused, 0–1.
+    pub dimmed_opacity: f64,
+}
+
+/// Longest string accepted as a channel color.
+const MAX_COLOR_LENGTH: usize = 64;
+
+/// Whether a string is plausibly a CSS color: non-empty and short enough to
+/// be one. Whether it actually paints is decided by the frontend.
+fn plausible_color(color: &str) -> bool {
+    !color.is_empty() && color.len() <= MAX_COLOR_LENGTH
+}
+
+/// Whether an opacity is a usable 0–1 value.
+fn valid_opacity(opacity: f64) -> bool {
+    opacity.is_finite() && (0.0..=1.0).contains(&opacity)
+}
+
+/// Validates the preferences the settings page sent.
+///
+/// # Errors
+/// Returns `Err` with a message when the dimming opacity is out of range or
+/// a channel color is empty or oversized.
+fn validate_preferences(preferences: &Preferences) -> Result<(), String> {
+    if !valid_opacity(preferences.dimmed_opacity) {
+        return Err("dimming opacity must be between 0 and 1".to_owned());
+    }
+    let colors = &preferences.channel_colors;
+    if [&colors.radiator_fans, &colors.unit_fan, &colors.pump]
+        .iter()
+        .any(|color| !plausible_color(color))
+    {
+        return Err("channel colors must be non-empty CSS color strings".to_owned());
+    }
+
+    Ok(())
 }
 
 /// The settings file path and its in-memory copy, shared between IPC
@@ -148,8 +206,9 @@ impl SettingsHandle {
 
 /// Reads and validates the settings file. A missing or unreadable file, or
 /// one that does not parse, yields the defaults; a file that parses but
-/// carries a profile that is not a legal curve set keeps the theme and drops
-/// the profile.
+/// carries unusable fields (a profile that is not a legal curve set, an
+/// out-of-range dimming opacity, an implausible channel color) keeps the
+/// rest and drops those fields.
 fn read_settings(path: &Path) -> AppSettings {
     let Ok(raw) = fs::read_to_string(path) else {
         return AppSettings::default();
@@ -157,12 +216,23 @@ fn read_settings(path: &Path) -> AppSettings {
     let Ok(mut settings) = serde_json::from_str::<AppSettings>(&raw) else {
         return AppSettings::default();
     };
-    let valid = settings
+    let valid_profile = settings
         .fan_profile
         .as_ref()
         .is_none_or(|profile| config_from_profile(profile).is_ok());
-    if !valid {
+    if !valid_profile {
         settings.fan_profile = None;
+    }
+    if !settings.dimmed_opacity.is_none_or(valid_opacity) {
+        settings.dimmed_opacity = None;
+    }
+    let valid_colors = settings.channel_colors.as_ref().is_none_or(|colors| {
+        [&colors.radiator_fans, &colors.unit_fan, &colors.pump]
+            .iter()
+            .all(|color| plausible_color(color))
+    });
+    if !valid_colors {
+        settings.channel_colors = None;
     }
 
     settings
@@ -222,13 +292,15 @@ pub async fn save_theme(
 /// stalled by the disk.
 ///
 /// # Errors
-/// Returns `Err` with a message when the settings mutex is poisoned or the
-/// file write fails.
+/// Returns `Err` with a message when the preferences carry an out-of-range
+/// dimming opacity or an implausible channel color, the settings mutex is
+/// poisoned, or the file write fails.
 #[tauri::command]
 pub async fn save_preferences(
     state: tauri::State<'_, SettingsHandle>,
     preferences: Preferences,
 ) -> Result<(), String> {
+    validate_preferences(&preferences)?;
     let handle = state.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {
         handle.update(|settings| {
@@ -236,6 +308,8 @@ pub async fn save_preferences(
             settings.watchdog_enabled = Some(preferences.watchdog_enabled);
             settings.restore_notify = Some(preferences.restore_notify);
             settings.update_check = Some(preferences.update_check);
+            settings.channel_colors = Some(preferences.channel_colors);
+            settings.dimmed_opacity = Some(preferences.dimmed_opacity);
         })
     })
     .await

@@ -4,14 +4,15 @@ import {
   makeStyles,
   Radio,
   RadioGroup,
-  Subtitle2,
   Switch,
   Title3,
   tokens,
 } from '@fluentui/react-components';
-import type { ReactElement, ReactNode } from 'react';
+import type { ReactElement } from 'react';
 import { match } from 'ts-pattern';
 import type { ThemePreference } from '../theme/theme.types';
+import { ChartSection } from './ChartSection';
+import { Section } from './Section';
 import type { Preferences } from './settings.ipc';
 
 const useStyles = makeStyles({
@@ -19,15 +20,6 @@ const useStyles = makeStyles({
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-  },
-  section: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-    padding: '14px 16px',
-    backgroundColor: tokens.colorNeutralBackground1,
-    border: `1px solid ${tokens.colorNeutralStroke2}`,
-    borderRadius: tokens.borderRadiusXLarge,
   },
   toggleRow: {
     display: 'flex',
@@ -62,23 +54,6 @@ function BackIcon(): ReactElement {
       <line x1="13.5" y1="8" x2="2.5" y2="8" />
       <polyline points="7,3.5 2.5,8 7,12.5" />
     </svg>
-  );
-}
-
-interface SectionProps {
-  /** Section heading, e.g. "Appearance". */
-  readonly title: string;
-  readonly children: ReactNode;
-}
-
-/** One card-styled settings group. */
-function Section({ title, children }: SectionProps): ReactElement {
-  const styles = useStyles();
-  return (
-    <section className={styles.section}>
-      <Subtitle2>{title}</Subtitle2>
-      {children}
-    </section>
   );
 }
 
@@ -123,9 +98,10 @@ export interface SettingsPageProps {
 }
 
 /**
- * The settings page: theme choice, close-button behavior, profile guard,
- * notifications, and the update check. Purely presentational; every piece
- * of state and behavior arrives through props.
+ * The settings page: theme choice, chart colors and focus dimming,
+ * close-button behavior, profile guard, notifications, and the update
+ * check. Purely presentational; every piece of state and behavior arrives
+ * through props.
  *
  * @returns The settings page content.
  */
@@ -159,6 +135,10 @@ export function SettingsPage(props: SettingsPageProps): ReactElement {
           <Radio value="system" label="System" />
         </RadioGroup>
       </Section>
+      <ChartSection
+        preferences={props.preferences}
+        onPreferencesChange={props.onPreferencesChange}
+      />
       <Section title="Window">
         <Caption1 className={styles.muted}>When the close button is pressed</Caption1>
         <RadioGroup

@@ -52,6 +52,8 @@ export interface AppLayoutProps {
   readonly tempMax?: number | undefined;
   readonly showGrid?: boolean | undefined;
   readonly showFill?: boolean | undefined;
+  /** Opacity of unfocused curves while one is focused, 0–1. */
+  readonly dimmedOpacity?: number | undefined;
   readonly onOpenSettings: () => void;
   readonly onPointMove?: CurvePointMoveHandler | undefined;
   readonly onRevert: () => void;
@@ -96,6 +98,7 @@ export function AppLayout(props: AppLayoutProps): ReactElement {
         tempMax={props.tempMax}
         showGrid={props.showGrid}
         showFill={props.showFill}
+        dimmedOpacity={props.dimmedOpacity}
         onPointMove={props.onPointMove}
       />
       {props.dirty && (

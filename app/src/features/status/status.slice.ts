@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import { SERIES_COLORS } from '../curves/curves.types';
+import type { ChannelColors } from '../curves/curves.types';
 import type { StatCardProps } from './StatCard';
 import type { FanReadings } from './status.ipc';
 import { readFanStatus } from './status.ipc';
@@ -32,30 +32,38 @@ const statusSlice = createSlice({
   },
 });
 
+/** The slices the stat-card selector reads. */
+interface FanStatsInput {
+  readonly status: StatusState;
+  readonly settings: { readonly preferences: { readonly channelColors: ChannelColors } };
+}
+
 /**
- * Maps the current readings to the three stat cards, in design order. Cards
- * carry `null` values until the first report arrives.
+ * Maps the current readings to the three stat cards, in design order, dots
+ * colored per the user's channel colors. Cards carry `null` values until
+ * the first report arrives.
  *
  * @returns One card per cooling channel.
  */
-export function selectFanStats(state: { readonly status: StatusState }): readonly StatCardProps[] {
+export function selectFanStats(state: FanStatsInput): readonly StatCardProps[] {
   const readings = state.status.readings;
+  const colors = state.settings.preferences.channelColors;
   return [
     {
       label: 'Radiator fans',
-      color: SERIES_COLORS.radiatorFans,
+      color: colors.radiatorFans,
       rpm: readings === null ? null : readings.radiatorRpm,
       dutyPct: readings === null ? null : readings.radiatorDuty,
     },
     {
       label: 'Unit fan',
-      color: SERIES_COLORS.unitFan,
+      color: colors.unitFan,
       rpm: readings === null ? null : readings.waterblockRpm,
       dutyPct: readings === null ? null : readings.waterblockDuty,
     },
     {
       label: 'Pump',
-      color: SERIES_COLORS.pump,
+      color: colors.pump,
       rpm: readings === null ? null : readings.pumpRpm,
       dutyPct: readings === null ? null : readings.pumpDuty,
     },

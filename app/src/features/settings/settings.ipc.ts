@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { match, P } from 'ts-pattern';
+import type { ChannelColors } from '../curves/curves.types';
 import type { FanProfile } from '../curves/profile';
 import { parseProfile } from '../curves/profile';
 import type { ThemeName } from '../theme/theme.types';
@@ -17,6 +18,10 @@ export interface Preferences {
   readonly restoreNotify: boolean;
   /** Whether startup checks GitHub for a newer release. */
   readonly updateCheck: boolean;
+  /** CSS color per cooling channel, for the chart and the stat cards. */
+  readonly channelColors: ChannelColors;
+  /** Opacity of the other curves while one is focused, 0–1. */
+  readonly dimmedOpacity: number;
 }
 
 /** Settings persisted across launches, as exchanged with the backend.
@@ -35,6 +40,10 @@ export interface AppSettings {
   readonly restoreNotify: boolean | null;
   /** Update check switch, or `null` for the default (on). */
   readonly updateCheck: boolean | null;
+  /** Channel colors, or `null` for the design defaults. */
+  readonly channelColors: ChannelColors | null;
+  /** Focus-dimming opacity, or `null` for the default (0.35). */
+  readonly dimmedOpacity: number | null;
 }
 
 /** What a fresh install reports: nothing chosen, nothing saved. */
@@ -45,6 +54,8 @@ const EMPTY_SETTINGS: AppSettings = {
   watchdogEnabled: null,
   restoreNotify: null,
   updateCheck: null,
+  channelColors: null,
+  dimmedOpacity: null,
 };
 
 /** Shape a raw IPC reply must have to count as settings. */
@@ -55,7 +66,49 @@ const settingsPattern = P.shape({
   watchdogEnabled: P.union(P.boolean, P.nullish),
   restoreNotify: P.union(P.boolean, P.nullish),
   updateCheck: P.union(P.boolean, P.nullish),
+  channelColors: P._,
+  dimmedOpacity: P.union(P.number, P.nullish),
 });
+
+/** Longest string accepted as a saved channel color. */
+const MAX_COLOR_LENGTH = 64;
+
+/** Whether a saved value is a CSS color the renderer can actually paint. */
+function isCssColor(value: unknown): value is string {
+  if (typeof value !== 'string' || value.length === 0 || value.length > MAX_COLOR_LENGTH) {
+    return false;
+  }
+  return CSS.supports('color', value);
+}
+
+/**
+ * Validates a saved channel-color set. All three channels must carry a
+ * paintable CSS color; anything else falls back to the design defaults.
+ *
+ * @returns The colors, or `null` when the value is not a usable set.
+ */
+function parseChannelColors(value: unknown): ChannelColors | null {
+  return match<unknown, ChannelColors | null>(value)
+    .with(
+      {
+        radiatorFans: P.when(isCssColor),
+        unitFan: P.when(isCssColor),
+        pump: P.when(isCssColor),
+      },
+      ({ radiatorFans, unitFan, pump }) => ({ radiatorFans, unitFan, pump }),
+    )
+    .otherwise(() => null);
+}
+
+/**
+ * Validates a saved focus-dimming opacity.
+ *
+ * @returns The opacity, or `null` when it is not a finite 0–1 value.
+ */
+function parseDimmedOpacity(value: number | null | undefined): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  return value >= 0 && value <= 1 ? value : null;
+}
 
 /**
  * Loads the persisted settings. Folds failures (IPC error, malformed reply,
@@ -76,6 +129,8 @@ export async function loadSettings(): Promise<AppSettings> {
         watchdogEnabled: settings.watchdogEnabled ?? null,
         restoreNotify: settings.restoreNotify ?? null,
         updateCheck: settings.updateCheck ?? null,
+        channelColors: parseChannelColors(settings.channelColors),
+        dimmedOpacity: parseDimmedOpacity(settings.dimmedOpacity),
       }))
       .otherwise(() => EMPTY_SETTINGS);
   } catch (error) {
@@ -108,6 +163,25 @@ export async function savePreferences(preferences: Preferences): Promise<void> {
   } catch (error) {
     console.error('preferences save failed:', error);
   }
+}
+
+/** Quiet period before a preference change is written to disk. */
+const SAVE_DEBOUNCE_MS = 250;
+
+/** Pending debounced write, if any. Module-level so bursts share one timer. */
+let pendingSave: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * Persists the preferences after a short quiet period, collapsing bursts of
+ * changes (a slider or color-area drag fires one per pointer move) into a
+ * single disk write carrying the latest value.
+ */
+export function savePreferencesDebounced(preferences: Preferences): void {
+  if (pendingSave !== null) clearTimeout(pendingSave);
+  pendingSave = setTimeout(() => {
+    pendingSave = null;
+    void savePreferences(preferences);
+  }, SAVE_DEBOUNCE_MS);
 }
 
 /**
