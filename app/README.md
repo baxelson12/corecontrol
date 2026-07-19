@@ -8,20 +8,20 @@ Windows.
 
 ```
 src/
-├── app/         bootstrap, store wiring, window chrome, root view, toaster
-├── core/        cross-cutting infrastructure: OS notifications, toast queue
-├── entities/    domain state and IPC shared by several features
-│   ├── channels/   channel colors and curve point/series types
-│   ├── profile/    fan profile model, parsing, and device IPC
-│   ├── settings/   persisted settings state and IPC
-│   └── theme/      theme preference state
-├── features/    one folder per screen concern
-│   ├── curves/     fan curve chart and editing state
-│   ├── detection/  cooler detection
-│   ├── settings/   settings page components
-│   ├── status/     live fan readings
-│   └── updates/    startup update check
-└── shared/      portable presentational components
++-- app/         bootstrap, store wiring, window chrome, root view, toaster
++-- core/        cross-cutting infrastructure: OS notifications, toast queue
++-- entities/    domain state and IPC shared by several features
+|   +-- channels/   channel colors and curve point/series types
+|   +-- profile/    fan profile model, parsing, and device IPC
+|   +-- settings/   persisted settings state and IPC
+|   +-- theme/      theme preference state
++-- features/    one folder per screen concern
+|   +-- curves/     fan curve chart and editing state
+|   +-- detection/  cooler detection
+|   +-- settings/   settings page components
+|   +-- status/     live fan readings
+|   +-- updates/    startup update check
++-- shared/      portable presentational components
 ```
 
 Dependency direction: `shared` imports nothing, `core` only `shared`,

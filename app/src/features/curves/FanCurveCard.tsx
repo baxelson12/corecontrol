@@ -27,7 +27,7 @@ export interface FanCurveCardProps {
   readonly tempMax?: number | undefined;
   readonly showGrid?: boolean | undefined;
   readonly showFill?: boolean | undefined;
-  /** Opacity of unfocused curves while one is focused, 0–1. */
+  /** Opacity of unfocused curves while one is focused, 0-1. */
   readonly dimmedOpacity?: number | undefined;
   readonly onPointMove?: CurvePointMoveHandler | undefined;
 }
@@ -53,7 +53,7 @@ export function FanCurveCard({
       <div className={styles.header}>
         <Body1Strong>Fan curve</Body1Strong>
         <Caption1 className={styles.hint}>
-          Drag points to adjust · click a curve to focus it
+          Drag points to adjust; click a curve to focus it
         </Caption1>
       </div>
       <FanCurveChart

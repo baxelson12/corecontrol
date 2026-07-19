@@ -73,7 +73,7 @@ pub struct AppSettings {
     pub update_check: Option<bool>,
     /// Chart channel colors, or `None` for the design defaults.
     pub channel_colors: Option<ChannelColors>,
-    /// Opacity of unfocused curves while one is focused, 0–1, or `None`
+    /// Opacity of unfocused curves while one is focused, 0-1, or `None`
     /// for the default (0.35).
     pub dimmed_opacity: Option<f64>,
 }
@@ -94,7 +94,7 @@ pub struct Preferences {
     pub update_check: bool,
     /// CSS color per cooling channel.
     pub channel_colors: ChannelColors,
-    /// Opacity of unfocused curves while one is focused, 0–1.
+    /// Opacity of unfocused curves while one is focused, 0-1.
     pub dimmed_opacity: f64,
 }
 
@@ -107,7 +107,7 @@ fn plausible_color(color: &str) -> bool {
     !color.is_empty() && color.len() <= MAX_COLOR_LENGTH
 }
 
-/// Whether an opacity is a usable 0–1 value.
+/// Whether an opacity is a usable 0-1 value.
 fn valid_opacity(opacity: f64) -> bool {
     opacity.is_finite() && (0.0..=1.0).contains(&opacity)
 }

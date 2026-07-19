@@ -5,15 +5,15 @@ import { match, P } from 'ts-pattern';
 export interface FanReadings {
   /** Speed of the first radiator fan in RPM. */
   readonly radiatorRpm: number;
-  /** Duty of the radiator fan channel, in percent (0–100). */
+  /** Duty of the radiator fan channel, in percent (0-100). */
   readonly radiatorDuty: number;
   /** Waterblock fan speed in RPM. */
   readonly waterblockRpm: number;
-  /** Duty of the waterblock fan channel, in percent (0–100). */
+  /** Duty of the waterblock fan channel, in percent (0-100). */
   readonly waterblockDuty: number;
   /** Pump speed in RPM. */
   readonly pumpRpm: number;
-  /** Duty of the pump channel, in percent (0–100). */
+  /** Duty of the pump channel, in percent (0-100). */
   readonly pumpDuty: number;
 }
 

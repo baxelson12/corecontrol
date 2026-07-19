@@ -49,7 +49,7 @@ export interface AppLayoutProps {
   readonly tempMax?: number | undefined;
   readonly showGrid?: boolean | undefined;
   readonly showFill?: boolean | undefined;
-  /** Opacity of unfocused curves while one is focused, 0–1. */
+  /** Opacity of unfocused curves while one is focused, 0-1. */
   readonly dimmedOpacity?: number | undefined;
   readonly onOpenSettings: () => void;
   readonly onPointMove?: CurvePointMoveHandler | undefined;

@@ -20,7 +20,7 @@ export interface Preferences {
   readonly updateCheck: boolean;
   /** CSS color per cooling channel, for the chart and the stat cards. */
   readonly channelColors: ChannelColors;
-  /** Opacity of the other curves while one is focused, 0–1. */
+  /** Opacity of the other curves while one is focused, 0-1. */
   readonly dimmedOpacity: number;
 }
 
@@ -103,7 +103,7 @@ function parseChannelColors(value: unknown): ChannelColors | null {
 /**
  * Validates a saved focus-dimming opacity.
  *
- * @returns The opacity, or `null` when it is not a finite 0–1 value.
+ * @returns The opacity, or `null` when it is not a finite 0-1 value.
  */
 function parseDimmedOpacity(value: number | null | undefined): number | null {
   if (typeof value !== 'number' || !Number.isFinite(value)) return null;

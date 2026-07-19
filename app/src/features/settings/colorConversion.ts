@@ -1,17 +1,17 @@
-/** An HSV color as the Fluent color picker exchanges it: hue 0–360,
- * saturation and value 0–1. */
+/** An HSV color as the Fluent color picker exchanges it: hue 0-360,
+ * saturation and value 0-1. */
 export interface HsvColor {
   readonly h: number;
   readonly s: number;
   readonly v: number;
 }
 
-/** Clamps a channel fraction to 0–1. */
+/** Clamps a channel fraction to 0-1. */
 function clampUnit(value: number): number {
   return Math.min(1, Math.max(0, value));
 }
 
-/** Formats a 0–1 channel fraction as a two-digit hex byte. */
+/** Formats a 0-1 channel fraction as a two-digit hex byte. */
 function channelToHex(value: number): string {
   return Math.round(clampUnit(value) * 255)
     .toString(16)
@@ -34,7 +34,7 @@ export function hsvToHex(color: HsvColor): string {
   return `#${channelToHex(channel(5))}${channelToHex(channel(3))}${channelToHex(channel(1))}`;
 }
 
-/** Converts 0–255 RGB channels to HSV. */
+/** Converts 0-255 RGB channels to HSV. */
 function rgbToHsv(r: number, g: number, b: number): HsvColor {
   const rn = clampUnit(r / 255);
   const gn = clampUnit(g / 255);
@@ -52,7 +52,7 @@ function rgbToHsv(r: number, g: number, b: number): HsvColor {
 }
 
 /**
- * Converts any CSS color string (hex, oklch, named, …) to HSV by painting
+ * Converts any CSS color string (hex, oklch, named, ...) to HSV by painting
  * one pixel on a canvas and reading it back, so every notation the renderer
  * can paint is accepted.
  *

@@ -22,7 +22,7 @@ export interface CurveSeriesLayerProps {
   readonly showFill: boolean;
   /** Faded rendering while another series holds the selection. */
   readonly dimmed: boolean;
-  /** Opacity used while dimmed, 0–1. Defaults to 0.35. */
+  /** Opacity used while dimmed, 0-1. Defaults to 0.35. */
   readonly dimmedOpacity?: number | undefined;
 }
 

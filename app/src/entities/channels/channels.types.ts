@@ -1,8 +1,8 @@
 /** A single control point on a fan curve. */
 export interface CurvePoint {
-  /** Coolant temperature in °C. */
+  /** Coolant temperature in degrees Celsius. */
   readonly temp: number;
-  /** Fan or pump duty in percent, 0–100. */
+  /** Fan or pump duty in percent, 0-100. */
   readonly duty: number;
 }
 

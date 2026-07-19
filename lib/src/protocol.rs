@@ -88,15 +88,15 @@ const _: () = assert!(
 pub struct FanStatus {
     /// Speed of the first radiator fan in RPM.
     pub radiator_rpm: u16,
-    /// Duty of the radiator fan channel, in percent (0–100).
+    /// Duty of the radiator fan channel, in percent (0-100).
     pub radiator_duty: u8,
     /// Waterblock (60 mm) fan speed in RPM.
     pub waterblock_rpm: u16,
-    /// Duty of the waterblock fan channel, in percent (0–100).
+    /// Duty of the waterblock fan channel, in percent (0-100).
     pub waterblock_duty: u8,
     /// Pump speed in RPM.
     pub pump_rpm: u16,
-    /// Duty of the pump channel, in percent (0–100).
+    /// Duty of the pump channel, in percent (0-100).
     pub pump_duty: u8,
 }
 

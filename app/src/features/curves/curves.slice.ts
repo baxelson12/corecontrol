@@ -20,7 +20,7 @@ const initialState: CurvesState = {
 };
 
 /**
- * Returns a copy of `series` with one point moved: snapped to 5° / 5% steps
+ * Returns a copy of `series` with one point moved: snapped to 5 C / 5% steps
  * and kept at least one step away from its neighbors.
  */
 function movePoint(series: readonly CurveSeries[], move: PointMove): readonly CurveSeries[] {

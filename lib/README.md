@@ -12,19 +12,19 @@ affiliated with MSI.
 
 ```
 src/
-├── lib.rs           crate root: module wiring and public exports
-├── error.rs         the shared error type
-├── protocol.rs      on-wire report format, fan curves, configuration
-├── cooler.rs        opening a device and applying or reading profiles
-├── models/
-│   ├── mod.rs       model registry and device detection
-│   ├── s280.rs      MEG Coreliquid S280 spec
-│   ├── s360.rs      MEG Coreliquid S360 spec
-│   └── k360.rs      MPG Coreliquid K360 spec
-└── bin/
-    ├── test_profile.rs   applies a fixed test profile
-    ├── dump_profile.rs   hex-dumps the config replies and the parsed profile
-    └── list_devices.rs   lists the HID interfaces hidapi can see
++-- lib.rs           crate root: module wiring and public exports
++-- error.rs         the shared error type
++-- protocol.rs      on-wire report format, fan curves, configuration
++-- cooler.rs        opening a device and applying or reading profiles
++-- models/
+|   +-- mod.rs       model registry and device detection
+|   +-- s280.rs      MEG Coreliquid S280 spec
+|   +-- s360.rs      MEG Coreliquid S360 spec
+|   +-- k360.rs      MPG Coreliquid K360 spec
++-- bin/
+    +-- test_profile.rs   applies a fixed test profile
+    +-- dump_profile.rs   hex-dumps the config replies and the parsed profile
+    +-- list_devices.rs   lists the HID interfaces hidapi can see
 ```
 
 ## What each piece does

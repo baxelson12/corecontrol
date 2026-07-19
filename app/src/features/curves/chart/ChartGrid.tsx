@@ -12,7 +12,7 @@ import {
 } from './geometry';
 
 /**
- * Minor grid lines every 5 °C and 5 % duty, plus the top border.
+ * Minor grid lines every 5 C and 5 % duty, plus the top border.
  *
  * @returns The grid layer.
  */
