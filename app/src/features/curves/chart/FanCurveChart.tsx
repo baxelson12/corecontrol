@@ -1,7 +1,8 @@
 import { makeStyles } from '@fluentui/react-components';
 import type { ReactElement, PointerEvent as ReactPointerEvent } from 'react';
 import { useRef, useState } from 'react';
-import type { CurvePointMoveHandler, CurveSeries } from '../curves.types';
+import type { CurveSeries } from '../../../entities/channels/channels.types';
+import type { CurvePointMoveHandler } from '../curves.types';
 import { ChartAxes } from './ChartAxes';
 import { ChartGrid } from './ChartGrid';
 import { CurveLabels } from './CurveLabels';
@@ -41,13 +42,13 @@ function eventToView(event: ReactPointerEvent<SVGSVGElement>): { x: number; y: n
 export interface FanCurveChartProps {
   /** Curves to draw, in paint order; a selected curve paints above the rest. */
   readonly series: readonly CurveSeries[];
-  /** Upper end of the temperature axis in °C. Defaults to 120. */
+  /** Upper end of the temperature axis in degrees Celsius. Defaults to 120. */
   readonly tempMax?: number | undefined;
   /** Minor grid lines. Defaults to on. */
   readonly showGrid?: boolean | undefined;
   /** Soft fill under each curve. Defaults to off. */
   readonly showFill?: boolean | undefined;
-  /** Opacity of unfocused curves while one is focused, 0–1. */
+  /** Opacity of unfocused curves while one is focused, 0-1. */
   readonly dimmedOpacity?: number | undefined;
   /**
    * Called repeatedly while a point is dragged, with the point clamped to the

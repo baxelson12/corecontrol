@@ -4,35 +4,36 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import type { ReactElement } from 'react';
 import { useCallback, useEffect } from 'react';
 import { match } from 'ts-pattern';
-import {
-  selectApplyPhase,
-  selectColoredSeries,
-  selectCurvesDirty,
-} from './features/curves/curves.selectors';
-import { curvePointMoved, curvesReverted } from './features/curves/curves.slice';
-import { curvesApplied, savedProfilePushStarted } from './features/curves/curves.thunks';
-import { deviceName } from './features/detection/detection.ipc';
-import { coolerScanStarted } from './features/detection/detection.slice';
-import { SettingsPage } from './features/settings/SettingsPage';
+import { profileRestoreNotified } from '../core/toasts/toasts.thunks';
+import type { CloseBehavior } from '../entities/settings/settings.ipc';
 import {
   preferencesChanged,
   settingsClosed,
   settingsOpened,
-} from './features/settings/settings.slice';
-import { settingsLoadStarted } from './features/settings/settings.thunks';
-import { fanStatusPolled, selectFanStats } from './features/status/status.slice';
+} from '../entities/settings/settings.slice';
+import { settingsLoadStarted } from '../entities/settings/settings.thunks';
 import {
   selectEffectiveTheme,
   systemThemeChanged,
   themeChosen,
-} from './features/theme/theme.slice';
-import { AppToaster } from './features/toasts/AppToaster';
-import { profileRestoreNotified } from './features/toasts/toasts.thunks';
-import { updateCheckStarted } from './features/updates/updates.thunks';
-import { AppLayout } from './layout/AppLayout';
-import { WindowFrame } from './layout/WindowFrame';
-import { useAppDispatch, useAppSelector } from './store/hooks';
-import type { AppDispatch } from './store/store';
+} from '../entities/theme/theme.slice';
+import {
+  selectApplyPhase,
+  selectColoredSeries,
+  selectCurvesDirty,
+} from '../features/curves/curves.selectors';
+import { curvePointMoved, curvesReverted } from '../features/curves/curves.slice';
+import { curvesApplied, savedProfilePushStarted } from '../features/curves/curves.thunks';
+import { deviceName } from '../features/detection/detection.ipc';
+import { coolerScanStarted } from '../features/detection/detection.slice';
+import { SettingsPage } from '../features/settings/SettingsPage';
+import { fanStatusPolled, selectFanStats } from '../features/status/status.slice';
+import { updateCheckStarted } from '../features/updates/updates.thunks';
+import { AppLayout } from './AppLayout';
+import { AppToaster } from './AppToaster';
+import { useAppDispatch, useAppSelector } from './hooks';
+import type { AppDispatch } from './store';
+import { WindowFrame } from './WindowFrame';
 
 const appWindow = getCurrentWindow();
 
@@ -92,6 +93,43 @@ function useStatusPolling(dispatch: AppDispatch, coolerFound: boolean): void {
   }, [dispatch, coolerFound]);
 }
 
+/** Everything the root view reads from the store, gathered in one place. */
+function useAppState() {
+  return {
+    theme: useAppSelector(selectEffectiveTheme),
+    themePreference: useAppSelector((state) => state.theme.preference),
+    settingsOpen: useAppSelector((state) => state.settings.open),
+    preferences: useAppSelector((state) => state.settings.preferences),
+    detection: useAppSelector((state) => state.detection),
+    series: useAppSelector((state) => state.curves.edited),
+    coloredSeries: useAppSelector(selectColoredSeries),
+    curveSource: useAppSelector((state) => state.curves.source),
+    dirty: useAppSelector(selectCurvesDirty),
+    applyPhase: useAppSelector(selectApplyPhase),
+    stats: useAppSelector(selectFanStats),
+  };
+}
+
+/** Title-bar callbacks; close follows the user's close-behavior preference. */
+function windowControls(closeBehavior: CloseBehavior): {
+  title: string;
+  onDragStart: () => void;
+  onMinimize: () => void;
+  onClose: () => void;
+} {
+  return {
+    title: 'CoreControl',
+    onDragStart: () => void appWindow.startDragging().catch(console.error),
+    onMinimize: () => void appWindow.hide().catch(console.error),
+    onClose: () =>
+      void match(closeBehavior)
+        .with('tray', () => appWindow.hide())
+        .with('exit', () => appWindow.close())
+        .exhaustive()
+        .catch(console.error),
+  };
+}
+
 /**
  * Root view: loads the persisted settings, then kicks off the update check
  * and cooler detection; once a cooler is open it pushes the saved fan
@@ -102,18 +140,9 @@ function useStatusPolling(dispatch: AppDispatch, coolerFound: boolean): void {
  */
 function App(): ReactElement {
   const dispatch = useAppDispatch();
-  const theme = useAppSelector(selectEffectiveTheme);
-  const themePreference = useAppSelector((state) => state.theme.preference);
-  const settingsOpen = useAppSelector((state) => state.settings.open);
-  const preferences = useAppSelector((state) => state.settings.preferences);
-  const detection = useAppSelector((state) => state.detection);
-  const series = useAppSelector((state) => state.curves.edited);
-  const coloredSeries = useAppSelector(selectColoredSeries);
-  const curveSource = useAppSelector((state) => state.curves.source);
-  const dirty = useAppSelector(selectCurvesDirty);
-  const applyPhase = useAppSelector(selectApplyPhase);
-  const stats = useAppSelector(selectFanStats);
-  const coolerFound = detection.state === 'found';
+  const state = useAppState();
+  const { preferences, series } = state;
+  const coolerFound = state.detection.state === 'found';
 
   useStartup(dispatch);
   useSystemThemeWatch(dispatch);
@@ -129,29 +158,19 @@ function App(): ReactElement {
     }, [dispatch]),
   );
 
-  const fluentTheme = match(theme)
+  const fluentTheme = match(state.theme)
     .with('dark', () => webDarkTheme)
     .with('light', () => webLightTheme)
     .exhaustive();
 
-  const windowProps = {
-    title: 'CoreControl',
-    onDragStart: () => appWindow.startDragging().catch(console.error),
-    onMinimize: () => appWindow.hide().catch(console.error),
-    onClose: () =>
-      match(preferences.closeBehavior)
-        .with('tray', () => appWindow.hide())
-        .with('exit', () => appWindow.close())
-        .exhaustive()
-        .catch(console.error),
-  };
+  const windowProps = windowControls(preferences.closeBehavior);
 
   return (
     <FluentProvider theme={fluentTheme}>
-      {settingsOpen ? (
+      {state.settingsOpen ? (
         <WindowFrame {...windowProps}>
           <SettingsPage
-            themePreference={themePreference}
+            themePreference={state.themePreference}
             preferences={preferences}
             onBack={() => dispatch(settingsClosed())}
             onThemeChange={(preference) => void dispatch(themeChosen(preference))}
@@ -162,12 +181,12 @@ function App(): ReactElement {
         <AppLayout
           {...windowProps}
           deviceLabel="Liquid cooler"
-          deviceName={deviceName(detection)}
-          stats={stats}
-          series={coloredSeries}
+          deviceName={deviceName(state.detection)}
+          stats={state.stats}
+          series={state.coloredSeries}
           dimmedOpacity={preferences.dimmedOpacity}
-          dirty={dirty && coolerFound && applyPhase !== 'verifying'}
-          curveSource={curveSource}
+          dirty={state.dirty && coolerFound && state.applyPhase !== 'verifying'}
+          curveSource={state.curveSource}
           onOpenSettings={() => dispatch(settingsOpened())}
           onPointMove={(seriesIndex, pointIndex, point) =>
             dispatch(curvePointMoved({ seriesIndex, pointIndex, point }))

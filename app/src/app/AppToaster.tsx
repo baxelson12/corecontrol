@@ -12,12 +12,12 @@ import {
 import type { ReactElement } from 'react';
 import { useEffect, useRef } from 'react';
 import { match } from 'ts-pattern';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { selectApplyPhase } from '../curves/curves.selectors';
-import { applyRetryDismissed } from '../curves/curves.slice';
-import { curvesApplied } from '../curves/curves.thunks';
-import type { ApplyPhase } from '../curves/curves.types';
-import { toastDelivered } from './toasts.slice';
+import { toastDelivered } from '../core/toasts/toasts.slice';
+import { selectApplyPhase } from '../features/curves/curves.selectors';
+import { applyRetryDismissed } from '../features/curves/curves.slice';
+import { curvesApplied } from '../features/curves/curves.thunks';
+import type { ApplyPhase } from '../features/curves/curves.types';
+import { useAppDispatch, useAppSelector } from './hooks';
 
 /** Toast id of the single apply-progress toast, so it can be updated. */
 const APPLY_TOAST_ID = 'apply-progress';

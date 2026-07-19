@@ -9,7 +9,7 @@ CoreControl, a Tauri desktop app, on top.
 
 ```
 Cargo.toml        workspace root
-lib/              the control library (USB HID protocol) — see lib/README.md
+lib/              the control library (USB HID protocol), see lib/README.md
 app/              CoreControl, the Tauri desktop app
   src/            React + Fluent UI frontend
   src-tauri/      Rust backend (Tauri commands)

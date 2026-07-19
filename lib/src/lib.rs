@@ -10,10 +10,10 @@
 //!
 //! Internally, shared behavior and per-model data are separated:
 //!
-//! - `protocol` — the on-wire report format, fan curves, and configuration
-//! - `cooler` — opening a device and applying or reading profiles
-//! - `error` — the shared error type
-//! - `models` — one small file per supported AIO, aggregated for detection
+//! - `protocol` - the on-wire report format, fan curves, and configuration
+//! - `cooler` - opening a device and applying or reading profiles
+//! - `error` - the shared error type
+//! - `models` - one small file per supported AIO, aggregated for detection
 //!
 //! Fan curves must carry between `MIN_CURVE_POINTS` and `MAX_CURVE_POINTS`
 //! points; the firmware rejects curves with fewer than four.

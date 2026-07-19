@@ -8,7 +8,7 @@
 //!
 //! Build and run from the crate root: `cargo run --bin dump_profile`.
 
-use coreliquid::{ChannelCurve, ControllerError, Cooler, FanConfig, MAX_CURVE_POINTS};
+use coreliquid::{ChannelCurve, ControllerError, Cooler, FanConfig};
 
 /// Process exit code for a successful run.
 const EXIT_OK: i32 = 0;
@@ -18,7 +18,6 @@ const EXIT_FAILURE: i32 = 1;
 /// Prints one channel's populated points as `temp C -> duty %` pairs.
 fn print_channel(name: &str, curve: &ChannelCurve) {
     let count = curve.point_count();
-    assert!(count <= MAX_CURVE_POINTS, "point count out of range");
     let points = curve.points();
     print!("  {name}:");
     for &(temp, duty) in points.iter().take(count) {
@@ -61,10 +60,5 @@ fn main() {
             EXIT_FAILURE
         }
     };
-    assert!(
-        code == EXIT_OK || code == EXIT_FAILURE,
-        "exit code must be a known value"
-    );
-    assert!(code >= EXIT_OK, "exit code must be non-negative");
     std::process::exit(code);
 }

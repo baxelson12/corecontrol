@@ -1,17 +1,14 @@
 import { makeStyles } from '@fluentui/react-components';
 import type { ReactElement } from 'react';
 import { match } from 'ts-pattern';
-import { DeviceHeader } from '../components/DeviceHeader';
-import { UnsavedChangesPill } from '../components/UnsavedChangesPill';
-import type {
-  CurvePointMoveHandler,
-  CurveSeries,
-  CurveSource,
-} from '../features/curves/curves.types';
+import type { CurveSeries } from '../entities/channels/channels.types';
+import type { CurvePointMoveHandler, CurveSource } from '../features/curves/curves.types';
 import { FanCurveCard } from '../features/curves/FanCurveCard';
 import { SettingsButton } from '../features/settings/SettingsButton';
-import type { StatCardProps } from '../features/status/StatCard';
-import { StatCard } from '../features/status/StatCard';
+import type { ChannelStat } from '../features/status/status.slice';
+import { DeviceHeader } from '../shared/components/DeviceHeader';
+import { StatCard } from '../shared/components/StatCard';
+import { UnsavedChangesPill } from '../shared/components/UnsavedChangesPill';
 import { WindowFrame } from './WindowFrame';
 
 const useStyles = makeStyles({
@@ -43,7 +40,7 @@ export interface AppLayoutProps {
   /** Product name, e.g. "MEG Core Liquid S280". */
   readonly deviceName: string;
   /** One readout card per cooling channel. */
-  readonly stats: readonly StatCardProps[];
+  readonly stats: readonly ChannelStat[];
   readonly series: readonly CurveSeries[];
   /** Whether edited curves differ from the applied ones. */
   readonly dirty: boolean;
@@ -52,7 +49,7 @@ export interface AppLayoutProps {
   readonly tempMax?: number | undefined;
   readonly showGrid?: boolean | undefined;
   readonly showFill?: boolean | undefined;
-  /** Opacity of unfocused curves while one is focused, 0–1. */
+  /** Opacity of unfocused curves while one is focused, 0-1. */
   readonly dimmedOpacity?: number | undefined;
   readonly onOpenSettings: () => void;
   readonly onPointMove?: CurvePointMoveHandler | undefined;

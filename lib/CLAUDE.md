@@ -2,7 +2,7 @@
 
 ## Public surface
 
-`Cooler` is the single entry point: `Cooler::scan()` → `Cooler::open(spec)`
+`Cooler` is the single entry point: `Cooler::scan()` -> `Cooler::open(spec)`
 (or `Cooler::detect()` for both), then instance methods. The only other
 exports are the data types those calls exchange (`ModelSpec`, `FanConfig`,
 `FanStatus`, `ChannelCurve`, `ControllerError`, curve-point bounds).

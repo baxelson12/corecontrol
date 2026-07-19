@@ -12,19 +12,19 @@ affiliated with MSI.
 
 ```
 src/
-├── lib.rs           crate root: module wiring and public exports
-├── error.rs         the shared error type
-├── protocol.rs      on-wire report format, fan curves, configuration
-├── cooler.rs        opening a device and applying or reading profiles
-├── models/
-│   ├── mod.rs       model registry and device detection
-│   ├── s280.rs      MEG Coreliquid S280 spec
-│   ├── s360.rs      MEG Coreliquid S360 spec
-│   └── k360.rs      MPG Coreliquid K360 spec
-└── bin/
-    ├── test_profile.rs   applies a fixed test profile
-    ├── dump_profile.rs   hex-dumps the config replies and the parsed profile
-    └── list_devices.rs   lists the HID interfaces hidapi can see
++-- lib.rs           crate root: module wiring and public exports
++-- error.rs         the shared error type
++-- protocol.rs      on-wire report format, fan curves, configuration
++-- cooler.rs        opening a device and applying or reading profiles
++-- models/
+|   +-- mod.rs       model registry and device detection
+|   +-- s280.rs      MEG Coreliquid S280 spec
+|   +-- s360.rs      MEG Coreliquid S360 spec
+|   +-- k360.rs      MPG Coreliquid K360 spec
++-- bin/
+    +-- test_profile.rs   applies a fixed test profile
+    +-- dump_profile.rs   hex-dumps the config replies and the parsed profile
+    +-- list_devices.rs   lists the HID interfaces hidapi can see
 ```
 
 ## What each piece does
@@ -35,14 +35,12 @@ The wire format lives here: the 64-byte report structure, the command bytes,
 and the five channel slots. Two public types carry most of the weight.
 
 `ChannelCurve` is a single fan curve, built with
-`ChannelCurve::from_points(&[(temp, duty), ...])`. A curve takes between
+`ChannelCurve::try_from_points(&[(temp, duty), ...])`. A curve takes between
 `MIN_CURVE_POINTS` (4) and `MAX_CURVE_POINTS` (7) points, with non-zero,
 strictly increasing temperatures. Anything outside those bounds is rejected at
-construction, because the firmware rejects it too. For points that arrive from
-outside the process (IPC, config files) `ChannelCurve::try_from_points` does
-the same validation and returns an error instead of panicking. `points()`
-returns a curve's pairs zero-padded to seven entries; `point_count()` says how
-many of them are real.
+construction, because the firmware rejects it too, so every curve that exists
+is valid. `points()` returns a curve's pairs zero-padded to seven entries;
+`point_count()` says how many of them are real.
 
 `FanConfig` holds the curves for every channel (radiator fans, waterblock fan,
 pump) and serializes them into the two reports the device expects. The reverse
@@ -106,8 +104,8 @@ let mut config = match cooler.read_profile()? {
     Some(running) => running,
     None => cooler.new_config(),
 };
-config.set_radiators(ChannelCurve::from_points(&[(35, 30), (50, 55), (65, 80), (80, 100)]));
-config.set_pump(ChannelCurve::from_points(&[(30, 80), (45, 85), (60, 95), (75, 100)]));
+config.set_radiators(ChannelCurve::try_from_points(&[(35, 30), (50, 55), (65, 80), (80, 100)])?);
+config.set_pump(ChannelCurve::try_from_points(&[(30, 80), (45, 85), (60, 95), (75, 100)])?);
 cooler.apply_config(&config)?;
 ```
 

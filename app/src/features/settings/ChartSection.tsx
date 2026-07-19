@@ -1,9 +1,9 @@
 import { Caption1, makeStyles, Slider, tokens } from '@fluentui/react-components';
 import type { ReactElement } from 'react';
-import type { ChannelColors } from '../curves/curves.types';
+import type { ChannelColors } from '../../entities/channels/channels.types';
+import type { Preferences } from '../../entities/settings/settings.ipc';
 import { ColorSettingRow } from './ColorSettingRow';
 import { Section } from './Section';
-import type { Preferences } from './settings.ipc';
 
 /** The color-configurable channels, in display order. */
 const CHANNELS = [

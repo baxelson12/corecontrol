@@ -10,10 +10,10 @@ import {
 } from '@fluentui/react-components';
 import type { ReactElement } from 'react';
 import { match } from 'ts-pattern';
-import type { ThemePreference } from '../theme/theme.types';
+import type { Preferences } from '../../entities/settings/settings.ipc';
+import type { ThemePreference } from '../../entities/theme/theme.types';
 import { ChartSection } from './ChartSection';
 import { Section } from './Section';
-import type { Preferences } from './settings.ipc';
 
 const useStyles = makeStyles({
   headerRow: {

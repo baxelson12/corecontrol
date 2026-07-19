@@ -1,6 +1,6 @@
 import { match, P } from 'ts-pattern';
-import type { CurvePoint, CurveSeries } from './curves.types';
-import { SERIES_COLORS } from './curves.types';
+import type { CurvePoint, CurveSeries } from '../channels/channels.types';
+import { SERIES_COLORS } from '../channels/channels.types';
 
 /** A fan profile as exchanged with the backend: one curve per channel. */
 export interface FanProfile {

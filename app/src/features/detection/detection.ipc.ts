@@ -48,7 +48,7 @@ export async function detectCooler(): Promise<Detection> {
  */
 export function deviceName(detection: Detection): string {
   return match(detection)
-    .with({ state: 'detecting' }, () => 'Detecting cooler…')
+    .with({ state: 'detecting' }, () => 'Detecting cooler...')
     .with({ state: 'found' }, ({ cooler }) => cooler.name)
     .with({ state: 'none' }, () => 'No cooler detected')
     .with({ state: 'failed' }, () => 'Detection failed')

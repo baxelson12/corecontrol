@@ -1,7 +1,7 @@
 import { makeStyles } from '@fluentui/react-components';
 import type { ReactElement } from 'react';
-import type { CurveSeries } from '../curves.types';
-import { DEFAULT_DIMMED_OPACITY } from '../curves.types';
+import type { CurveSeries } from '../../../entities/channels/channels.types';
+import { DEFAULT_DIMMED_OPACITY } from '../../../entities/channels/channels.types';
 import { CurvePointHandle } from './CurvePointHandle';
 import { linePath, PLOT_BOTTOM, PLOT_LEFT, PLOT_RIGHT } from './geometry';
 
@@ -22,7 +22,7 @@ export interface CurveSeriesLayerProps {
   readonly showFill: boolean;
   /** Faded rendering while another series holds the selection. */
   readonly dimmed: boolean;
-  /** Opacity used while dimmed, 0–1. Defaults to 0.35. */
+  /** Opacity used while dimmed, 0-1. Defaults to 0.35. */
   readonly dimmedOpacity?: number | undefined;
 }
 

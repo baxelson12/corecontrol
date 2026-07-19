@@ -63,7 +63,7 @@ export function ChartAxes({ tempMax }: { readonly tempMax: number }): ReactEleme
           y={PLOT_BOTTOM + 18}
           textAnchor="middle"
         >
-          {tickText(t, tempMax, '°C')}
+          {tickText(t, tempMax, 'C')}
         </text>
       ))}
       {ticks(DUTY_MAX).map((d) => (

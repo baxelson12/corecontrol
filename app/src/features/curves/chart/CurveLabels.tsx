@@ -1,6 +1,6 @@
 import { makeStyles, tokens } from '@fluentui/react-components';
 import type { ReactElement } from 'react';
-import type { CurveSeries } from '../curves.types';
+import type { CurveSeries } from '../../../entities/channels/channels.types';
 import { clamp, DUTY_MAX, dutyToY, PLOT_BOTTOM, PLOT_LEFT } from './geometry';
 
 /** Vertical space one label row needs, in viewBox units. */

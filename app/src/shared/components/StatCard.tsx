@@ -58,11 +58,11 @@ export function StatCard({ label, color, rpm, dutyPct }: StatCardProps): ReactEl
         <Caption1 className={styles.muted}>{label}</Caption1>
       </div>
       <Title3 className={styles.value}>
-        {rpm === null ? '—' : Math.round(rpm).toLocaleString()}
+        {rpm === null ? '-' : Math.round(rpm).toLocaleString()}
         <Caption1 className={styles.unit}> RPM</Caption1>
       </Title3>
       <Caption1 className={styles.muted}>
-        {dutyPct === null ? '—' : `${Math.round(dutyPct)}%`} duty
+        {dutyPct === null ? '-' : `${Math.round(dutyPct)}%`} duty
       </Caption1>
     </div>
   );
