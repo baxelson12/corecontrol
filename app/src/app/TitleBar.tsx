@@ -65,7 +65,7 @@ export function TitleBar({ title, onDragStart, onMinimize, onClose }: TitleBarPr
 
   function handleMouseDown(event: MouseEvent<HTMLElement>): void {
     if (event.button !== 0) return;
-    if ((event.target as HTMLElement).closest('button')) return;
+    if (event.target instanceof Element && event.target.closest('button')) return;
     onDragStart();
   }
 

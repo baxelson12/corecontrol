@@ -25,7 +25,9 @@ const initialState: Detection = { state: 'detecting' };
 
 const detectionSlice = createSlice({
   name: 'detection',
-  initialState: initialState as Detection,
+  // Lazy so the state keeps the whole `Detection` union instead of the
+  // narrowed literal the initializer would infer.
+  initialState: (): Detection => initialState,
   reducers: {},
   extraReducers: (builder) => {
     builder.addCase(coolerScanStarted.fulfilled, (_state, action) => action.payload);

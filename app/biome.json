@@ -41,10 +41,20 @@
         "useShorthandAssign": "off"
       },
       "complexity": {
-        "noForEach": "error"
+        "noForEach": "error",
+        "noExcessiveLinesPerFunction": {
+          "level": "error",
+          "options": {
+            "maxLines": 60
+          }
+        }
       },
       "suspicious": {
-        "noAssignInExpressions": "error"
+        "noAssignInExpressions": "error",
+        "noShadow": "error"
+      },
+      "nursery": {
+        "noFloatingPromises": "error"
       }
     }
   }
