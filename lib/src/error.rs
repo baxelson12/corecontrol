@@ -1,60 +1,30 @@
 //! Error type shared across the crate.
 
+use thiserror::Error;
+
 /// Failures that can arise while talking to a cooler.
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum ControllerError {
     /// No recognized Coreliquid is attached.
+    #[error("no recognized Coreliquid cooler is attached")]
     DeviceNotFound,
     /// The `hidapi` layer failed while opening or transferring.
-    Hid(hidapi::HidError),
+    #[error("HID transport failed: {0}")]
+    Hid(#[from] hidapi::HidError),
     /// A reply arrived but carried an unexpected command byte.
+    #[error("reply carried unexpected command byte {0:#04x}")]
     UnexpectedResponse(u8),
     /// A fan curve was rejected during validation, with the reason.
+    #[error("invalid fan curve: {0}")]
     InvalidCurve(&'static str),
     /// A status reading or a temperature parameter was outside plausible
     /// bounds; for readings this suggests a corrupt or misaligned reply.
+    #[error("status reading {0} is outside plausible bounds")]
     ImplausibleReading(u16),
     /// A write transferred no bytes.
+    #[error("write transferred only {0} bytes")]
     ShortWrite(usize),
     /// A read returned fewer bytes than a full report.
+    #[error("read returned only {0} bytes")]
     ShortRead(usize),
-}
-
-impl From<hidapi::HidError> for ControllerError {
-    fn from(error: hidapi::HidError) -> Self {
-        ControllerError::Hid(error)
-    }
-}
-
-impl std::fmt::Display for ControllerError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ControllerError::DeviceNotFound => {
-                write!(f, "no recognized Coreliquid cooler is attached")
-            }
-            ControllerError::Hid(error) => write!(f, "HID transport failed: {error}"),
-            ControllerError::UnexpectedResponse(command) => {
-                write!(f, "reply carried unexpected command byte {command:#04x}")
-            }
-            ControllerError::InvalidCurve(reason) => {
-                write!(f, "invalid fan curve: {reason}")
-            }
-            ControllerError::ImplausibleReading(value) => {
-                write!(f, "status reading {value} is outside plausible bounds")
-            }
-            ControllerError::ShortWrite(written) => {
-                write!(f, "write transferred only {written} bytes")
-            }
-            ControllerError::ShortRead(read) => write!(f, "read returned only {read} bytes"),
-        }
-    }
-}
-
-impl std::error::Error for ControllerError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            ControllerError::Hid(error) => Some(error),
-            _ => None,
-        }
-    }
 }
