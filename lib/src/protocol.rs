@@ -61,24 +61,7 @@ const SLOT_STRIDE: usize = MAX_CURVE_POINTS + 1;
 /// Lowest pump duty a safe default configuration may use.
 const MIN_SAFE_PUMP_DUTY: u8 = 50;
 
-// Compile-time invariants over the constants above.
-const _: () = assert!(
-    CH_WATERBLOCK < CHANNEL_COUNT,
-    "waterblock slot outside the report"
-);
-const _: () = assert!(CH_PUMP < CHANNEL_COUNT, "pump slot outside the report");
-const _: () = assert!(
-    MIN_CURVE_POINTS <= MAX_CURVE_POINTS,
-    "curve point range inverted"
-);
-const _: () = assert!(
-    CMD_SET_DUTY != CMD_SET_TEMP,
-    "set-config opcodes must differ"
-);
-const _: () = assert!(
-    CMD_GET_DUTY != CMD_GET_TEMP,
-    "get-config opcodes must differ"
-);
+// Compile-time layout invariants tying the offsets above together.
 const _: () = assert!(
     FIRST_SLOT_OFFSET + CHANNEL_COUNT * SLOT_STRIDE <= REPORT_LEN,
     "channel slots overflow the report"
@@ -129,23 +112,10 @@ pub struct ChannelCurve {
 }
 
 impl ChannelCurve {
-    /// Builds a curve from `MIN_CURVE_POINTS`..=`MAX_CURVE_POINTS` points, each
-    /// a (temperature C, duty %) pair. Temperatures must be non-zero and
-    /// strictly increasing. For input that crosses a trust boundary use
-    /// [`ChannelCurve::try_from_points`] instead.
-    ///
-    /// # Panics
-    /// Panics when [`ChannelCurve::try_from_points`] would reject the points.
-    pub fn from_points(points: &[(u8, u8)]) -> ChannelCurve {
-        match ChannelCurve::try_from_points(points) {
-            Ok(curve) => curve,
-            Err(error) => panic!("{error}"),
-        }
-    }
-
-    /// Builds a curve from (temperature C, duty %) pairs, validating instead
-    /// of panicking. This is the constructor for points arriving from outside
-    /// the process (IPC payloads, config files).
+    /// Builds a curve from `MIN_CURVE_POINTS`..=`MAX_CURVE_POINTS` points,
+    /// each a (temperature C, duty %) pair. Temperatures must be non-zero and
+    /// strictly increasing. This is the only constructor, so every
+    /// `ChannelCurve` in existence has passed this validation.
     ///
     /// # Errors
     /// Returns `ControllerError::InvalidCurve` when the slice carries fewer
@@ -197,24 +167,66 @@ impl ChannelCurve {
     /// Returns the curve as `MAX_CURVE_POINTS` (temperature C, duty %) pairs,
     /// for an application to display the current profile.
     pub fn points(&self) -> [(u8, u8); MAX_CURVE_POINTS] {
-        assert!(
-            self.duties.iter().all(|&d| d <= MAX_DUTY),
-            "duty invariant violated"
-        );
-        assert!(
-            self.temps.iter().all(|&t| t <= TEMP_CEILING),
-            "temp invariant violated"
-        );
         let mut pairs = [(0u8, 0u8); MAX_CURVE_POINTS];
-        let mut index = 0;
-        while index < MAX_CURVE_POINTS {
-            pairs[index] = (self.temps[index], self.duties[index]);
-            index += 1;
+        for (pair, (&temp, &duty)) in pairs.iter_mut().zip(self.temps.iter().zip(&self.duties)) {
+            *pair = (temp, duty);
         }
 
         pairs
     }
 }
+
+// --- Default curves ----------------------------------------------------------
+
+/// Default fan curve for the radiator and waterblock slots: a moderate ramp.
+const DEFAULT_FAN_CURVE: ChannelCurve = ChannelCurve {
+    mode: CURVE_MODE,
+    temps: [35, 45, 60, 75, 0, 0, 0],
+    duties: [30, 45, 75, 100, 0, 0, 0],
+};
+
+/// Default pump curve: high duty throughout, so the loop never starves.
+const DEFAULT_PUMP_CURVE: ChannelCurve = ChannelCurve {
+    mode: CURVE_MODE,
+    temps: [30, 45, 60, 75, 0, 0, 0],
+    duties: [80, 85, 95, 100, 0, 0, 0],
+};
+
+/// Compile-time validity check for the built-in curves: a leading run of at
+/// least `MIN_CURVE_POINTS` non-zero, strictly increasing temperatures, and
+/// every value within the firmware's bounds. Mirrors what
+/// [`ChannelCurve::try_from_points`] enforces at runtime.
+const fn valid_curve(curve: &ChannelCurve) -> bool {
+    let mut count = 0;
+    while count < MAX_CURVE_POINTS && curve.temps[count] != 0 {
+        count += 1;
+    }
+    if curve.mode != CURVE_MODE || count < MIN_CURVE_POINTS {
+        return false;
+    }
+    let mut index = 0;
+    while index < MAX_CURVE_POINTS {
+        if curve.duties[index] > MAX_DUTY || curve.temps[index] > TEMP_CEILING {
+            return false;
+        }
+        if index + 1 < count && curve.temps[index + 1] <= curve.temps[index] {
+            return false;
+        }
+        index += 1;
+    }
+
+    true
+}
+
+const _: () = assert!(valid_curve(&DEFAULT_FAN_CURVE), "default fan curve invalid");
+const _: () = assert!(
+    valid_curve(&DEFAULT_PUMP_CURVE),
+    "default pump curve invalid"
+);
+const _: () = assert!(
+    DEFAULT_PUMP_CURVE.duties[0] >= MIN_SAFE_PUMP_DUTY,
+    "default pump curve idles too low"
+);
 
 // --- Fan configuration ------------------------------------------------------
 
@@ -230,15 +242,8 @@ impl FanConfig {
     /// ramp on the fan and waterblock slots, and a high pump curve. All curves
     /// carry four points, the confirmed minimum.
     pub fn new() -> FanConfig {
-        let fan = ChannelCurve::from_points(&[(35, 30), (45, 45), (60, 75), (75, 100)]);
-        let pump = ChannelCurve::from_points(&[(30, 80), (45, 85), (60, 95), (75, 100)]);
-        let mut channels = [fan; CHANNEL_COUNT];
-        channels[CH_PUMP] = pump;
-        assert!(
-            pump.duties[0] >= MIN_SAFE_PUMP_DUTY,
-            "pump default must not idle low"
-        );
-        assert_eq!(channels.len(), CHANNEL_COUNT, "channel array wrong size");
+        let mut channels = [DEFAULT_FAN_CURVE; CHANNEL_COUNT];
+        channels[CH_PUMP] = DEFAULT_PUMP_CURVE;
 
         FanConfig { channels }
     }
@@ -247,28 +252,16 @@ impl FanConfig {
     /// extra fan slots have no physical channel; they are written for
     /// uniformity, so suspect them first if a model misbehaves.
     pub fn set_radiators(&mut self, curve: ChannelCurve) {
-        assert!(
-            curve.duties.iter().all(|&d| d <= MAX_DUTY),
-            "duty out of range"
-        );
         self.channels[0..CH_WATERBLOCK].fill(curve);
     }
 
     /// Sets the waterblock-fan curve (fixed slot 3).
     pub fn set_waterblock(&mut self, curve: ChannelCurve) {
-        assert!(
-            curve.duties.iter().all(|&d| d <= MAX_DUTY),
-            "duty out of range"
-        );
         self.channels[CH_WATERBLOCK] = curve;
     }
 
     /// Sets the pump curve (fixed slot 4).
     pub fn set_pump(&mut self, curve: ChannelCurve) {
-        assert!(
-            curve.duties.iter().all(|&d| d <= MAX_DUTY),
-            "duty out of range"
-        );
         self.channels[CH_PUMP] = curve;
     }
 
@@ -289,27 +282,21 @@ impl FanConfig {
 
     /// Serializes the duty (`0x40`) or temperature (`0x41`) report body.
     pub(crate) fn serialize(&self, command: u8) -> [u8; REPORT_LEN] {
-        assert!(
+        debug_assert!(
             command == CMD_SET_DUTY || command == CMD_SET_TEMP,
             "serialize called with a non-config command: {command:#x}"
         );
         let mut buffer = build_command(command, &[]);
-        let mut channel = 0;
-        while channel < CHANNEL_COUNT {
+        for (channel, curve) in self.channels.iter().enumerate() {
             let slot = FIRST_SLOT_OFFSET + channel * SLOT_STRIDE;
             let values = if command == CMD_SET_DUTY {
-                &self.channels[channel].duties
+                &curve.duties
             } else {
-                &self.channels[channel].temps
+                &curve.temps
             };
-            buffer[slot] = self.channels[channel].mode;
+            buffer[slot] = curve.mode;
             buffer[slot + 1..slot + 1 + MAX_CURVE_POINTS].copy_from_slice(values);
-            channel += 1;
         }
-        assert_eq!(
-            buffer[0], WRITE_PREFIX,
-            "prefix overwritten during serialize"
-        );
 
         buffer
     }
@@ -317,18 +304,7 @@ impl FanConfig {
 
 impl Default for FanConfig {
     fn default() -> FanConfig {
-        let config = FanConfig::new();
-        assert_eq!(
-            config.channels.len(),
-            CHANNEL_COUNT,
-            "default channel count wrong"
-        );
-        assert!(
-            config.channels[CH_PUMP].duties[0] >= MIN_SAFE_PUMP_DUTY,
-            "default pump too low"
-        );
-
-        config
+        FanConfig::new()
     }
 }
 
@@ -337,7 +313,7 @@ impl Default for FanConfig {
 /// Builds a fixed-size report: prefix byte, command byte, then the payload,
 /// zero-padded to the report length. No allocation occurs.
 pub(crate) fn build_command(command: u8, payload: &[u8]) -> [u8; REPORT_LEN] {
-    assert!(
+    debug_assert!(
         payload.len() + 2 <= REPORT_LEN,
         "payload too large for report"
     );
@@ -345,15 +321,14 @@ pub(crate) fn build_command(command: u8, payload: &[u8]) -> [u8; REPORT_LEN] {
     buffer[0] = WRITE_PREFIX;
     buffer[1] = command;
     buffer[2..2 + payload.len()].copy_from_slice(payload);
-    assert_eq!(buffer[1], command, "command byte not placed correctly");
 
     buffer
 }
 
 /// Reads one channel's little-endian u16 from a status reply block.
 fn status_channel_u16(report: &[u8; REPORT_LEN], base: usize, channel: usize) -> u16 {
-    assert!(channel < CHANNEL_COUNT, "channel outside the report");
-    assert!(
+    debug_assert!(channel < CHANNEL_COUNT, "channel outside the report");
+    debug_assert!(
         base == STATUS_RPM_OFFSET || base == STATUS_DUTY_OFFSET,
         "not a status block offset: {base:#x}"
     );
@@ -392,7 +367,7 @@ fn parse_curve_slot(
     temp_report: &[u8; REPORT_LEN],
     channel: usize,
 ) -> Option<ChannelCurve> {
-    assert!(channel < CHANNEL_COUNT, "channel outside the report");
+    debug_assert!(channel < CHANNEL_COUNT, "channel outside the report");
     let slot = FIRST_SLOT_OFFSET + channel * SLOT_STRIDE;
     if duty_report[slot] != CURVE_MODE || temp_report[slot] != CURVE_MODE {
         return None;

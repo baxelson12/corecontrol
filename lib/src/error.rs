@@ -11,8 +11,8 @@ pub enum ControllerError {
     UnexpectedResponse(u8),
     /// A fan curve was rejected during validation, with the reason.
     InvalidCurve(&'static str),
-    /// A status reply carried a reading outside plausible bounds, suggesting
-    /// a corrupt or misaligned reply.
+    /// A status reading or a temperature parameter was outside plausible
+    /// bounds; for readings this suggests a corrupt or misaligned reply.
     ImplausibleReading(u16),
     /// A write transferred no bytes.
     ShortWrite(usize),

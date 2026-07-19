@@ -34,13 +34,23 @@ pub struct ModelSpec {
 /// Every model this controller recognizes, aggregated from the per-model files.
 pub(crate) const KNOWN_MODELS: [ModelSpec; 3] = [s280::SPEC, s360::SPEC, k360::SPEC];
 
-// Compile-time invariants over the registry.
-const _: () = assert!(VENDOR_ID != 0, "vendor id must be set");
-const _: () = assert!(!KNOWN_MODELS.is_empty(), "model table must not be empty");
-const _: () = assert!(
-    MAX_RADIATOR_FANS >= 1,
-    "a model must have at least one radiator fan"
-);
+// Every registry entry must carry a usable product id and fan count; checking
+// here covers models added later without any per-model code.
+const _: () = {
+    let mut index = 0;
+    while index < KNOWN_MODELS.len() {
+        assert!(
+            KNOWN_MODELS[index].product_id != 0,
+            "model is missing a product id"
+        );
+        assert!(
+            KNOWN_MODELS[index].radiator_fans >= 1
+                && KNOWN_MODELS[index].radiator_fans <= MAX_RADIATOR_FANS,
+            "model radiator fan count out of range"
+        );
+        index += 1;
+    }
+};
 
 /// Returns every model this controller can drive. Backs
 /// [`crate::Cooler::known_models`], the public entry point.
@@ -56,13 +66,8 @@ pub(crate) fn known_models() -> &'static [ModelSpec] {
 /// Returns `ControllerError::Hid` when the HID context cannot be created.
 pub(crate) fn detect_attached() -> Result<Vec<ModelSpec>, ControllerError> {
     let api = HidApi::new()?;
-    let attached: Vec<ModelSpec> = available_devices(&api).collect();
-    debug_assert!(
-        attached.len() <= KNOWN_MODELS.len(),
-        "detection yielded more models than the registry holds"
-    );
 
-    Ok(attached)
+    Ok(available_devices(&api).collect())
 }
 
 /// Yields each recognized model currently attached, at most once per model,

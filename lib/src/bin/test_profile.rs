@@ -57,30 +57,18 @@ const _: () = assert!(
 /// Builds a four-point curve holding `duty` across an increasing temperature
 /// span, satisfying the device's curve requirements (four points, non-zero and
 /// ascending temperatures).
-fn flat_curve(duty: u8) -> ChannelCurve {
-    assert!(duty <= MAX_DUTY_PERCENT, "duty out of range: {duty}");
-    let curve = ChannelCurve::from_points(&[(30, duty), (45, duty), (60, duty), (75, duty)]);
-    let points = curve.points();
-    assert!(
-        points[0].1 == duty,
-        "curve did not store the requested duty"
-    );
-
-    curve
+fn flat_curve(duty: u8) -> Result<ChannelCurve, ControllerError> {
+    ChannelCurve::try_from_points(&[(30, duty), (45, duty), (60, duty), (75, duty)])
 }
 
 /// Builds the fixed profile from `SETTINGS`.
-fn build_profile(cooler: &Cooler) -> FanConfig {
-    assert!(
-        cooler.model().radiator_fans >= 1,
-        "cooler model has no radiator fan"
-    );
+fn build_profile(cooler: &Cooler) -> Result<FanConfig, ControllerError> {
     let mut config = cooler.new_config();
-    config.set_radiators(flat_curve(SETTINGS.radiator_duty));
-    config.set_waterblock(flat_curve(SETTINGS.unit_duty));
-    config.set_pump(flat_curve(SETTINGS.pump_duty));
+    config.set_radiators(flat_curve(SETTINGS.radiator_duty)?);
+    config.set_waterblock(flat_curve(SETTINGS.unit_duty)?);
+    config.set_pump(flat_curve(SETTINGS.pump_duty)?);
 
-    config
+    Ok(config)
 }
 
 /// Detects a cooler, applies the fixed profile, and pushes a temperature so the
@@ -89,7 +77,7 @@ fn run() -> Result<(), ControllerError> {
     let mut cooler = Cooler::detect()?;
     cooler.initialize()?;
     println!("Detected {}.", cooler.model().name);
-    let profile = build_profile(&cooler);
+    let profile = build_profile(&cooler)?;
     cooler.apply_config(&profile)?;
     cooler.push_cpu_temp(SETTINGS.push_temp)?;
     println!(
@@ -109,10 +97,5 @@ fn main() {
             EXIT_FAILURE
         }
     };
-    assert!(
-        code == EXIT_OK || code == EXIT_FAILURE,
-        "exit code must be a known value"
-    );
-    assert!(code >= EXIT_OK, "exit code must be non-negative");
     std::process::exit(code);
 }
