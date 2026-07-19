@@ -90,7 +90,7 @@ export function ColorSettingRow({ label, value, onChange }: ColorSettingRowProps
   return (
     <div className={styles.row}>
       <span>{label}</span>
-      <Popover trapFocus>
+      <Popover trapFocus positioning={{ position: 'below', align: 'end', offset: 6 }}>
         <PopoverTrigger disableButtonEnhancement>
           <button
             type="button"
