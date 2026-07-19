@@ -1,4 +1,4 @@
-import type { CurvePoint, CurveSeries } from '../curves.types';
+import type { CurvePoint, CurveSeries } from '../../../entities/channels/channels.types';
 
 export const VIEW_WIDTH = 620;
 export const VIEW_HEIGHT = 300;

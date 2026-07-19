@@ -1,7 +1,7 @@
 import { makeStyles } from '@fluentui/react-components';
 import type { ReactElement } from 'react';
-import type { CurveSeries } from '../curves.types';
-import { DEFAULT_DIMMED_OPACITY } from '../curves.types';
+import type { CurveSeries } from '../../../entities/channels/channels.types';
+import { DEFAULT_DIMMED_OPACITY } from '../../../entities/channels/channels.types';
 import { CurvePointHandle } from './CurvePointHandle';
 import { linePath, PLOT_BOTTOM, PLOT_LEFT, PLOT_RIGHT } from './geometry';
 

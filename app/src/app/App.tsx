@@ -4,35 +4,35 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import type { ReactElement } from 'react';
 import { useCallback, useEffect } from 'react';
 import { match } from 'ts-pattern';
-import {
-  selectApplyPhase,
-  selectColoredSeries,
-  selectCurvesDirty,
-} from './features/curves/curves.selectors';
-import { curvePointMoved, curvesReverted } from './features/curves/curves.slice';
-import { curvesApplied, savedProfilePushStarted } from './features/curves/curves.thunks';
-import { deviceName } from './features/detection/detection.ipc';
-import { coolerScanStarted } from './features/detection/detection.slice';
-import { SettingsPage } from './features/settings/SettingsPage';
+import { profileRestoreNotified } from '../core/toasts/toasts.thunks';
 import {
   preferencesChanged,
   settingsClosed,
   settingsOpened,
-} from './features/settings/settings.slice';
-import { settingsLoadStarted } from './features/settings/settings.thunks';
-import { fanStatusPolled, selectFanStats } from './features/status/status.slice';
+} from '../entities/settings/settings.slice';
+import { settingsLoadStarted } from '../entities/settings/settings.thunks';
 import {
   selectEffectiveTheme,
   systemThemeChanged,
   themeChosen,
-} from './features/theme/theme.slice';
-import { AppToaster } from './features/toasts/AppToaster';
-import { profileRestoreNotified } from './features/toasts/toasts.thunks';
-import { updateCheckStarted } from './features/updates/updates.thunks';
-import { AppLayout } from './layout/AppLayout';
-import { WindowFrame } from './layout/WindowFrame';
-import { useAppDispatch, useAppSelector } from './store/hooks';
-import type { AppDispatch } from './store/store';
+} from '../entities/theme/theme.slice';
+import {
+  selectApplyPhase,
+  selectColoredSeries,
+  selectCurvesDirty,
+} from '../features/curves/curves.selectors';
+import { curvePointMoved, curvesReverted } from '../features/curves/curves.slice';
+import { curvesApplied, savedProfilePushStarted } from '../features/curves/curves.thunks';
+import { deviceName } from '../features/detection/detection.ipc';
+import { coolerScanStarted } from '../features/detection/detection.slice';
+import { SettingsPage } from '../features/settings/SettingsPage';
+import { fanStatusPolled, selectFanStats } from '../features/status/status.slice';
+import { updateCheckStarted } from '../features/updates/updates.thunks';
+import { AppLayout } from './AppLayout';
+import { AppToaster } from './AppToaster';
+import { useAppDispatch, useAppSelector } from './hooks';
+import type { AppDispatch } from './store';
+import { WindowFrame } from './WindowFrame';
 
 const appWindow = getCurrentWindow();
 

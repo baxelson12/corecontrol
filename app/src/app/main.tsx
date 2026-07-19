@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
 import App from './App';
-import { store } from './store/store';
+import { store } from './store';
 import './styles.css';
 
 // The app has no use for the WebView2 context menu; keep it in dev builds

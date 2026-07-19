@@ -1,7 +1,8 @@
 import { makeStyles } from '@fluentui/react-components';
 import type { ReactElement, PointerEvent as ReactPointerEvent } from 'react';
 import { useRef, useState } from 'react';
-import type { CurvePointMoveHandler, CurveSeries } from '../curves.types';
+import type { CurveSeries } from '../../../entities/channels/channels.types';
+import type { CurvePointMoveHandler } from '../curves.types';
 import { ChartAxes } from './ChartAxes';
 import { ChartGrid } from './ChartGrid';
 import { CurveLabels } from './CurveLabels';

@@ -1,10 +1,10 @@
 import { configureStore } from '@reduxjs/toolkit';
+import { toastsReducer } from '../core/toasts/toasts.slice';
+import { settingsReducer } from '../entities/settings/settings.slice';
+import { themeReducer } from '../entities/theme/theme.slice';
 import { curvesReducer } from '../features/curves/curves.slice';
 import { detectionReducer } from '../features/detection/detection.slice';
-import { settingsReducer } from '../features/settings/settings.slice';
 import { statusReducer } from '../features/status/status.slice';
-import { themeReducer } from '../features/theme/theme.slice';
-import { toastsReducer } from '../features/toasts/toasts.slice';
 
 /** The app store: theme, settings-page state, cooler detection, fan curves,
  * live status, and queued error toasts. */

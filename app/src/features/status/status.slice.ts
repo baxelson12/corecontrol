@@ -1,8 +1,19 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import type { ChannelColors } from '../curves/curves.types';
-import type { StatCardProps } from './StatCard';
+import type { ChannelColors } from '../../entities/channels/channels.types';
 import type { FanReadings } from './status.ipc';
 import { readFanStatus } from './status.ipc';
+
+/** Live readout of one cooling channel, shaped for a stat card. */
+export interface ChannelStat {
+  /** Channel name, e.g. "Radiator fans". */
+  readonly label: string;
+  /** Channel color, matching its curve on the chart. */
+  readonly color: string;
+  /** Current speed in RPM, or `null` before the first reading. */
+  readonly rpm: number | null;
+  /** Current duty in percent, or `null` before the first reading. */
+  readonly dutyPct: number | null;
+}
 
 /** Live cooler readings: the last good status report, if any. */
 interface StatusState {
@@ -45,7 +56,7 @@ interface FanStatsInput {
  *
  * @returns One card per cooling channel.
  */
-export function selectFanStats(state: FanStatsInput): readonly StatCardProps[] {
+export function selectFanStats(state: FanStatsInput): readonly ChannelStat[] {
   const readings = state.status.readings;
   const colors = state.settings.preferences.channelColors;
   return [

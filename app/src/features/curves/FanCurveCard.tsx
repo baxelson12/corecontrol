@@ -1,7 +1,8 @@
 import { Body1Strong, Caption1, makeStyles, tokens } from '@fluentui/react-components';
 import type { ReactElement } from 'react';
+import type { CurveSeries } from '../../entities/channels/channels.types';
 import { FanCurveChart } from './chart/FanCurveChart';
-import type { CurvePointMoveHandler, CurveSeries } from './curves.types';
+import type { CurvePointMoveHandler } from './curves.types';
 
 const useStyles = makeStyles({
   root: {

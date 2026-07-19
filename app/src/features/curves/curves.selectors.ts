@@ -1,5 +1,6 @@
 import { createSelector } from '@reduxjs/toolkit';
-import type { ApplyPhase, ChannelColors, CurveSeries, CurvesState } from './curves.types';
+import type { ChannelColors, CurveSeries } from '../../entities/channels/channels.types';
+import type { ApplyPhase, CurvesState } from './curves.types';
 
 /** Whether two series match in name, color, and every point. */
 function sameSeries(a: CurveSeries, b: CurveSeries): boolean {

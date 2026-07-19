@@ -1,6 +1,6 @@
 import { makeStyles, tokens } from '@fluentui/react-components';
 import type { ReactElement, ReactNode } from 'react';
-import { TitleBar } from '../components/TitleBar';
+import { TitleBar } from './TitleBar';
 
 const useStyles = makeStyles({
   root: {

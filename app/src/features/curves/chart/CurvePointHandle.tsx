@@ -1,6 +1,6 @@
 import { makeStyles, tokens } from '@fluentui/react-components';
 import type { ReactElement } from 'react';
-import type { CurvePoint } from '../curves.types';
+import type { CurvePoint } from '../../../entities/channels/channels.types';
 import { clamp, DUTY_MAX, dutyToY, tempToX } from './geometry';
 
 const useStyles = makeStyles({

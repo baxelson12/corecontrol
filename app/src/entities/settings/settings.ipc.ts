@@ -1,8 +1,8 @@
 import { invoke } from '@tauri-apps/api/core';
 import { match, P } from 'ts-pattern';
-import type { ChannelColors } from '../curves/curves.types';
-import type { FanProfile } from '../curves/profile';
-import { parseProfile } from '../curves/profile';
+import type { ChannelColors } from '../channels/channels.types';
+import type { FanProfile } from '../profile/profile';
+import { parseProfile } from '../profile/profile';
 import type { ThemeName } from '../theme/theme.types';
 
 /** What the close button does: exit the app, or hide to the tray. */

@@ -1,5 +1,5 @@
-import type { CurveSeries } from './curves.types';
-import { SERIES_COLORS } from './curves.types';
+import type { CurveSeries } from '../../entities/channels/channels.types';
+import { SERIES_COLORS } from '../../entities/channels/channels.types';
 
 /** Builds a series from [temp, duty] pairs. */
 function curve(

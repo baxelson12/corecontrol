@@ -1,11 +1,12 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 import { match } from 'ts-pattern';
-import { settingsLoadStarted } from '../settings/settings.thunks';
+import type { CurvePoint, CurveSeries } from '../../entities/channels/channels.types';
+import { profileToSeries } from '../../entities/profile/profile';
+import { settingsLoadStarted } from '../../entities/settings/settings.thunks';
 import { DEFAULT_SERIES } from './curves.defaults';
 import { curvesApplied, savedProfilePushStarted } from './curves.thunks';
-import type { CurvePoint, CurveSeries, CurvesState, PointMove } from './curves.types';
-import { profileToSeries } from './profile';
+import type { CurvesState, PointMove } from './curves.types';
 
 const SNAP = 5;
 const TEMP_MAX = 120;

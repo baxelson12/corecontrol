@@ -1,6 +1,6 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import { DEFAULT_DIMMED_OPACITY, SERIES_COLORS } from '../curves/curves.types';
+import { DEFAULT_DIMMED_OPACITY, SERIES_COLORS } from '../channels/channels.types';
 import type { Preferences } from './settings.ipc';
 import { savePreferencesDebounced } from './settings.ipc';
 import { settingsLoadStarted } from './settings.thunks';

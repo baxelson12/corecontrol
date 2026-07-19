@@ -1,8 +1,8 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { getVersion } from '@tauri-apps/api/app';
-import { notifyIfHidden } from '../notifications/notify';
-import type { SettingsState } from '../settings/settings.slice';
-import { updateAvailable } from '../toasts/toasts.slice';
+import { notifyIfHidden } from '../../core/notifications/notify';
+import { toastPushed } from '../../core/toasts/toasts.slice';
+import type { SettingsState } from '../../entities/settings/settings.slice';
 import { fetchLatestVersion, isNewerVersion } from './updates.github';
 
 /**
@@ -23,6 +23,12 @@ export const updateCheckStarted = createAsyncThunk<
   if (latest === null || !isNewerVersion(latest, current)) {
     return;
   }
-  dispatch(updateAvailable(latest));
+  dispatch(
+    toastPushed({
+      kind: 'success',
+      title: 'Update available',
+      body: `CoreControl ${latest} is out; grab it from GitHub releases.`,
+    }),
+  );
   await notifyIfHidden('Update available', `CoreControl ${latest} is out on GitHub.`);
 });
