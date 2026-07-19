@@ -36,6 +36,8 @@ pub(crate) const KNOWN_MODELS: [ModelSpec; 3] = [s280::SPEC, s360::SPEC, k360::S
 
 // Every registry entry must carry a usable product id and fan count; checking
 // here covers models added later without any per-model code.
+// Indexing is const-evaluated: an out-of-bounds access aborts the build.
+#[allow(clippy::indexing_slicing)]
 const _: () = {
     let mut index = 0;
     while index < KNOWN_MODELS.len() {

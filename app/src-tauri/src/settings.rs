@@ -261,6 +261,8 @@ fn write_settings(path: &Path, settings: &AppSettings) -> Result<(), String> {
 /// # Errors
 /// Returns `Err` with a message when the settings mutex is poisoned.
 #[tauri::command]
+// Tauri hands commands their managed state by value.
+#[allow(clippy::needless_pass_by_value)]
 pub fn load_settings(state: tauri::State<'_, SettingsHandle>) -> Result<AppSettings, String> {
     state.snapshot()
 }

@@ -3,6 +3,9 @@ name = "coreliquid"
 version = "0.1.0"
 edition = "2024"
 
+[lints]
+workspace = true
+
 [dependencies]
 hidapi = "2.6.6"
 thiserror = "2"

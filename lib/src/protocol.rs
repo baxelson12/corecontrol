@@ -138,16 +138,22 @@ impl ChannelCurve {
         if points.iter().any(|&(_, duty)| duty > MAX_DUTY) {
             return Err(ControllerError::InvalidCurve("duty must be 0-100 %"));
         }
-        if !points.windows(2).all(|pair| pair[1].0 > pair[0].0) {
+        if !points
+            .iter()
+            .zip(points.iter().skip(1))
+            .all(|(a, b)| b.0 > a.0)
+        {
             return Err(ControllerError::InvalidCurve(
                 "temperatures must strictly increase",
             ));
         }
         let mut temps = [0u8; MAX_CURVE_POINTS];
         let mut duties = [0u8; MAX_CURVE_POINTS];
-        for (index, &(temp, duty)) in points.iter().enumerate() {
-            temps[index] = temp;
-            duties[index] = duty;
+        for ((temp_slot, duty_slot), &(temp, duty)) in
+            temps.iter_mut().zip(duties.iter_mut()).zip(points)
+        {
+            *temp_slot = temp;
+            *duty_slot = duty;
         }
 
         Ok(ChannelCurve {
@@ -160,12 +166,14 @@ impl ChannelCurve {
     /// Number of populated points: the length of the leading run of non-zero
     /// temperatures. Entries beyond it in [`ChannelCurve::points`] are
     /// padding.
+    #[must_use]
     pub fn point_count(&self) -> usize {
         self.temps.iter().take_while(|&&temp| temp != 0).count()
     }
 
     /// Returns the curve as `MAX_CURVE_POINTS` (temperature C, duty %) pairs,
     /// for an application to display the current profile.
+    #[must_use]
     pub fn points(&self) -> [(u8, u8); MAX_CURVE_POINTS] {
         let mut pairs = [(0u8, 0u8); MAX_CURVE_POINTS];
         for (pair, (&temp, &duty)) in pairs.iter_mut().zip(self.temps.iter().zip(&self.duties)) {
@@ -196,6 +204,8 @@ const DEFAULT_PUMP_CURVE: ChannelCurve = ChannelCurve {
 /// least `MIN_CURVE_POINTS` non-zero, strictly increasing temperatures, and
 /// every value within the firmware's bounds. Mirrors what
 /// [`ChannelCurve::try_from_points`] enforces at runtime.
+// Indexing is const-evaluated: an out-of-bounds access aborts the build.
+#[allow(clippy::indexing_slicing)]
 const fn valid_curve(curve: &ChannelCurve) -> bool {
     let mut count = 0;
     while count < MAX_CURVE_POINTS && curve.temps[count] != 0 {
@@ -223,6 +233,8 @@ const _: () = assert!(
     valid_curve(&DEFAULT_PUMP_CURVE),
     "default pump curve invalid"
 );
+// Indexing is const-evaluated: an out-of-bounds access aborts the build.
+#[allow(clippy::indexing_slicing)]
 const _: () = assert!(
     DEFAULT_PUMP_CURVE.duties[0] >= MIN_SAFE_PUMP_DUTY,
     "default pump curve idles too low"
@@ -241,6 +253,7 @@ impl FanConfig {
     /// Creates a configuration with conservative safe defaults: a moderate fan
     /// ramp on the fan and waterblock slots, and a high pump curve. All curves
     /// carry four points, the confirmed minimum.
+    #[must_use]
     pub fn new() -> FanConfig {
         let mut channels = [DEFAULT_FAN_CURVE; CHANNEL_COUNT];
         channels[CH_PUMP] = DEFAULT_PUMP_CURVE;
@@ -266,16 +279,19 @@ impl FanConfig {
     }
 
     /// Returns the radiator curve (representative slot 0), for display.
+    #[must_use]
     pub fn radiators(&self) -> ChannelCurve {
         self.channels[0]
     }
 
     /// Returns the waterblock curve, for display.
+    #[must_use]
     pub fn waterblock(&self) -> ChannelCurve {
         self.channels[CH_WATERBLOCK]
     }
 
     /// Returns the pump curve, for display.
+    #[must_use]
     pub fn pump(&self) -> ChannelCurve {
         self.channels[CH_PUMP]
     }
@@ -287,15 +303,17 @@ impl FanConfig {
             "serialize called with a non-config command: {command:#x}"
         );
         let mut buffer = build_command(command, &[]);
-        for (channel, curve) in self.channels.iter().enumerate() {
-            let slot = FIRST_SLOT_OFFSET + channel * SLOT_STRIDE;
+        let (_, slot_area) = buffer.split_at_mut(FIRST_SLOT_OFFSET);
+        for (slot, curve) in slot_area.chunks_exact_mut(SLOT_STRIDE).zip(&self.channels) {
             let values = if command == CMD_SET_DUTY {
                 &curve.duties
             } else {
                 &curve.temps
             };
-            buffer[slot] = curve.mode;
-            buffer[slot + 1..slot + 1 + MAX_CURVE_POINTS].copy_from_slice(values);
+            if let [mode, points @ ..] = slot {
+                *mode = curve.mode;
+                points.copy_from_slice(values);
+            }
         }
 
         buffer
@@ -320,21 +338,28 @@ pub(crate) fn build_command(command: u8, payload: &[u8]) -> [u8; REPORT_LEN] {
     let mut buffer = [0u8; REPORT_LEN];
     buffer[0] = WRITE_PREFIX;
     buffer[1] = command;
-    buffer[2..2 + payload.len()].copy_from_slice(payload);
+    for (slot, &byte) in buffer.iter_mut().skip(2).zip(payload) {
+        *slot = byte;
+    }
 
     buffer
 }
 
-/// Reads one channel's little-endian u16 from a status reply block.
+/// Reads one channel's little-endian u16 from a status reply block. The
+/// layout invariants at the top of the module guarantee the pair is inside
+/// the report, so a miss can only mean an internal bug; it reads as zero.
 fn status_channel_u16(report: &[u8; REPORT_LEN], base: usize, channel: usize) -> u16 {
     debug_assert!(channel < CHANNEL_COUNT, "channel outside the report");
     debug_assert!(
         base == STATUS_RPM_OFFSET || base == STATUS_DUTY_OFFSET,
         "not a status block offset: {base:#x}"
     );
-    let offset = base + channel * 2;
+    let pair = report
+        .get(base + channel * 2..)
+        .and_then(|block| block.first_chunk::<2>());
+    debug_assert!(pair.is_some(), "status pair outside the report");
 
-    u16::from_le_bytes([report[offset], report[offset + 1]])
+    pair.map_or(0, |bytes| u16::from_le_bytes(*bytes))
 }
 
 /// Reads one channel's speed from a status reply, rejecting implausible
@@ -368,19 +393,28 @@ fn parse_curve_slot(
     channel: usize,
 ) -> Option<ChannelCurve> {
     debug_assert!(channel < CHANNEL_COUNT, "channel outside the report");
-    let slot = FIRST_SLOT_OFFSET + channel * SLOT_STRIDE;
-    if duty_report[slot] != CURVE_MODE || temp_report[slot] != CURVE_MODE {
+    let [duty_mode, duties @ ..] = *slot_bytes(duty_report, channel)?;
+    let [temp_mode, temps @ ..] = *slot_bytes(temp_report, channel)?;
+    if duty_mode != CURVE_MODE || temp_mode != CURVE_MODE {
         return None;
     }
-    let temps = &temp_report[slot + 1..slot + 1 + MAX_CURVE_POINTS];
-    let duties = &duty_report[slot + 1..slot + 1 + MAX_CURVE_POINTS];
     let mut pairs = [(0u8, 0u8); MAX_CURVE_POINTS];
-    for (pair, (&temp, &duty)) in pairs.iter_mut().zip(temps.iter().zip(duties)) {
+    for (pair, (&temp, &duty)) in pairs.iter_mut().zip(temps.iter().zip(&duties)) {
         *pair = (temp, duty);
     }
     let count = pairs.iter().take_while(|&&(temp, _)| temp != 0).count();
 
     ChannelCurve::try_from_points(pairs.get(..count)?).ok()
+}
+
+/// Returns one channel's slot (mode byte plus curve values) from a
+/// configuration reply. The layout invariants at the top of the module keep
+/// every channel's slot inside the report.
+fn slot_bytes(report: &[u8; REPORT_LEN], channel: usize) -> Option<&[u8; SLOT_STRIDE]> {
+    report
+        .get(FIRST_SLOT_OFFSET..)
+        .and_then(|slots| slots.chunks_exact(SLOT_STRIDE).nth(channel))
+        .and_then(|slot| slot.try_into().ok())
 }
 
 /// Parses a duty-configuration reply (`0x32`) and a temperature reply

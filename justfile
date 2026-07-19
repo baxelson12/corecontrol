@@ -21,9 +21,10 @@ check:
 
 # --- Desktop app (app/) -----------------------------------------------------
 
-# Type-check the app backend for the Windows target, no binary produced.
+# Type-check and lint the app backend for the Windows target, no binary
+# produced.
 check-app:
-    cargo xwin check -p corecontrol-app --features custom-protocol --target x86_64-pc-windows-msvc
+    cargo xwin clippy -p corecontrol-app --features custom-protocol --target x86_64-pc-windows-msvc -- -D warnings
 
 # Install frontend dependencies.
 install:

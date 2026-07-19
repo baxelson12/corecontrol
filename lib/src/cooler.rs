@@ -60,11 +60,17 @@ impl Cooler {
     }
 
     /// Returns every model this controller can drive, for display or logging.
+    #[must_use]
     pub fn known_models() -> &'static [ModelSpec] {
         crate::models::known_models()
     }
 
     /// Convenience: detects and opens the first recognized Coreliquid.
+    ///
+    /// # Errors
+    /// Returns `ControllerError::DeviceNotFound` when no recognized model is
+    /// attached, and `ControllerError::Hid` when the HID context cannot be
+    /// created or the device cannot be opened.
     pub fn detect() -> Result<Cooler, ControllerError> {
         let api = HidApi::new()?;
         let spec = available_devices(&api)
@@ -75,17 +81,20 @@ impl Cooler {
     }
 
     /// Returns the detected model's spec, for display.
+    #[must_use]
     pub fn model(&self) -> ModelSpec {
         self.spec
     }
 
     /// Returns the profile this controller last applied, or `None` if none has
     /// been applied yet. This is a software shadow, not a live device read.
+    #[must_use]
     pub fn current_profile(&self) -> Option<&FanConfig> {
         self.current.as_ref()
     }
 
     /// Builds a fresh configuration with safe defaults for editing.
+    #[must_use]
     pub fn new_config(&self) -> FanConfig {
         FanConfig::new()
     }
@@ -93,6 +102,10 @@ impl Cooler {
     /// Runs the connect handshake MSI Center performs before it drives the
     /// fans: a feature-report read followed by reads of the current fan
     /// configuration. Call once after opening.
+    ///
+    /// # Errors
+    /// Returns `ControllerError::Hid` on transport failure and `ShortRead`
+    /// on a truncated configuration reply.
     pub fn initialize(&self) -> Result<(), ControllerError> {
         self.read_handshake_feature()?;
         self.read_config(CMD_GET_DUTY)?;
@@ -101,8 +114,8 @@ impl Cooler {
         Ok(())
     }
 
-    /// Issues the GET_FEATURE control request for report 0x52. The contents are
-    /// not consumed; issuing the request is the part of the handshake that
+    /// Issues the `GET_FEATURE` control request for report 0x52. The contents
+    /// are not consumed; issuing the request is the part of the handshake that
     /// matters.
     fn read_handshake_feature(&self) -> Result<(), ControllerError> {
         let mut buffer = [0u8; HANDSHAKE_FEATURE_LEN + 1];
@@ -204,6 +217,10 @@ impl Cooler {
     /// Applies a complete configuration in the two writes the device requires
     /// (duty values first, then temperature breakpoints), then records it as
     /// the current profile.
+    ///
+    /// # Errors
+    /// Returns `ControllerError::Hid` on transport failure and `ShortWrite`
+    /// when a report transfers no bytes.
     pub fn apply_config(&mut self, config: &FanConfig) -> Result<(), ControllerError> {
         let duty_report = config.serialize(crate::protocol::CMD_SET_DUTY);
         let temp_report = config.serialize(crate::protocol::CMD_SET_TEMP);

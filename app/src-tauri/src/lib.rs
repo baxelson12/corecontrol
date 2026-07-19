@@ -1,4 +1,4 @@
-//! Tauri backend for the CoreControl desktop app.
+//! Tauri backend for the `CoreControl` desktop app.
 //!
 //! The backend is a thin IPC layer over the `coreliquid` control library.
 //! [`detect_cooler`] runs the startup detection scan and opens the first
@@ -342,13 +342,12 @@ fn enable_autostart_on_first_run(app: &tauri::AppHandle, first_run: bool) {
     }
 }
 
-/// Builds and runs the Tauri application, registering the IPC handlers.
-///
-/// # Panics
-/// Panics if the Tauri runtime fails to initialize, which is unrecoverable.
+/// Builds and runs the Tauri application, registering the IPC handlers. A
+/// runtime that fails to start is unrecoverable: the failure is logged and
+/// the process exits non-zero.
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let outcome = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             tray::reveal_main_window(app);
         }))
@@ -386,6 +385,9 @@ pub fn run() {
             settings::save_fan_profile,
             settings::save_preferences
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .run(tauri::generate_context!());
+    if let Err(error) = outcome {
+        eprintln!("failed to run the tauri application: {error}");
+        std::process::exit(1);
+    }
 }
