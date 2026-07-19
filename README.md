@@ -41,8 +41,9 @@ GitHub release against the running version and announces a newer one.
 The app lives in the notification area: a tray icon with an
 Open/Settings/Exit menu is always present, and launching the exe with
 `--minimized` (what the run-at-startup entry does) starts it hidden in the
-tray. Run-at-startup is registered on first launch; Task Manager's Startup
-apps page turns it off. Launching the exe a second time reveals the running
+tray. Run-at-startup is re-registered on every launch, so the entry follows
+the exe if an installer moves it; Task Manager's Startup apps page turns it
+off. Launching the exe a second time reveals the running
 instance instead of starting another one. The title bar minimize button
 hides the window to the tray (no taskbar entry); the close button exits the
 app by default, or hides to the tray when the settings page says so.

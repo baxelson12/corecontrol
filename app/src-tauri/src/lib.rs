@@ -16,10 +16,11 @@
 //! The app lives in the notification area: the [`tray`] module owns the tray
 //! icon, its Open/Settings/Exit menu, and the hover tooltip with live fan
 //! readings.
-//! The autostart entry (managed by the autostart plugin, enabled on first
-//! run) launches the exe with `--minimized`, which keeps the window hidden
-//! so a boot start lands in the tray only. A second launch of the exe
-//! reveals the running instance instead of starting another one.
+//! The autostart entry (managed by the autostart plugin, re-registered on
+//! every launch so it tracks the installed exe path) launches the exe with
+//! `--minimized`, which keeps the window hidden so a boot start lands in the
+//! tray only. A second launch of the exe reveals the running instance
+//! instead of starting another one.
 
 mod settings;
 mod tray;
@@ -327,14 +328,17 @@ fn launched_minimized() -> bool {
     std::env::args().any(|arg| arg == "--minimized")
 }
 
-/// Registers autostart on the very first launch (no settings file yet), so
-/// the app runs at boot right after installation. Task Manager's Startup
-/// apps page can disable it; later launches never re-enable it. Skipped in
-/// dev builds to keep debug binaries out of the startup entries.
-fn enable_autostart_on_first_run(app: &tauri::AppHandle, first_run: bool) {
+/// Re-registers autostart on every launch, so the Run entry always points at
+/// the exe that is actually running (an installer can move it, e.g. NSIS
+/// installs per-user while MSI installs to Program Files, which would leave a
+/// stale entry). Task Manager's Startup apps page stays authoritative: its
+/// disable flag lives in a separate `StartupApproved` value that rewriting
+/// the entry does not touch. Skipped in dev builds to keep debug binaries
+/// out of the startup entries.
+fn enable_autostart(app: &tauri::AppHandle) {
     use tauri_plugin_autostart::ManagerExt;
 
-    if !first_run || cfg!(debug_assertions) {
+    if cfg!(debug_assertions) {
         return;
     }
     if let Err(error) = app.autolaunch().enable() {
@@ -360,9 +364,8 @@ pub fn run() {
         .manage(watchdog::ApplyStamp::default())
         .setup(|app| {
             let path = app.path().app_config_dir()?.join("settings.json");
-            let first_run = !path.exists();
             app.manage(settings::SettingsHandle::load(path));
-            enable_autostart_on_first_run(app.handle(), first_run);
+            enable_autostart(app.handle());
             watchdog::spawn(
                 app.handle().clone(),
                 app.state::<CoolerHandle>().inner().clone(),
