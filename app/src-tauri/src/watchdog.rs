@@ -4,8 +4,9 @@
 //! the running profile behind the app's back. A detached thread wakes every
 //! [`CHECK_INTERVAL`], reads the profile the cooler is running, and pushes
 //! the saved profile back when they differ, whether or not the window is
-//! visible. After a restore it emits [`RESTORED_EVENT`] so an open UI can
-//! show a toast.
+//! visible. The watchdog preference on the settings page pauses the checks
+//! without stopping the thread. After a restore it emits [`RESTORED_EVENT`]
+//! so the UI can notify the user.
 //!
 //! The check pauses for [`APPLY_HOLD_OFF`] after every user apply: the
 //! frontend saves a profile only once the device confirms it, so during that
@@ -62,11 +63,15 @@ pub fn spawn(app: AppHandle, cooler: CoolerHandle, settings: SettingsHandle, sta
 }
 
 /// The watchdog loop: one check per interval, for the life of the process.
-/// A failed check is logged and retried at the next interval.
+/// A check is skipped while the watchdog preference is off; a failed check
+/// is logged and retried at the next interval.
 fn run(app: &AppHandle, cooler: &CoolerHandle, settings: &SettingsHandle, stamp: &ApplyStamp) {
     loop {
         std::thread::sleep(CHECK_INTERVAL);
         if stamp.is_recent() {
+            continue;
+        }
+        if !settings.watchdog_enabled().unwrap_or(true) {
             continue;
         }
         match check_and_restore(&cooler.0, settings) {
