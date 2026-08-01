@@ -1,8 +1,9 @@
 import { FluentProvider, webDarkTheme, webLightTheme } from '@fluentui/react-components';
+import { getVersion } from '@tauri-apps/api/app';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import type { ReactElement } from 'react';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { match } from 'ts-pattern';
 import { profileRestoreNotified } from '../core/toasts/toasts.thunks';
 import type { CloseBehavior } from '../entities/settings/settings.ipc';
@@ -67,6 +68,15 @@ function useBackendEvent(event: string, handler: () => void): void {
   }, [event, handler]);
 }
 
+/** Resolves the running app version once, `null` until it arrives. */
+function useAppVersion(): string | null {
+  const [version, setVersion] = useState<string | null>(null);
+  useEffect(() => {
+    getVersion().then(setVersion).catch(console.error);
+  }, []);
+  return version;
+}
+
 /** Keeps the store's copy of the OS theme preference fresh. */
 function useSystemThemeWatch(dispatch: AppDispatch): void {
   useEffect(() => {
@@ -111,14 +121,17 @@ function useAppState() {
 }
 
 /** Title-bar callbacks; close follows the user's close-behavior preference. */
-function windowControls(closeBehavior: CloseBehavior): {
+function windowControls(
+  version: string | null,
+  closeBehavior: CloseBehavior,
+): {
   title: string;
   onDragStart: () => void;
   onMinimize: () => void;
   onClose: () => void;
 } {
   return {
-    title: 'CoreControl',
+    title: version === null ? 'CoreControl' : `CoreControl (v${version})`,
     onDragStart: () => void appWindow.startDragging().catch(console.error),
     onMinimize: () => void appWindow.hide().catch(console.error),
     onClose: () =>
@@ -163,7 +176,7 @@ function App(): ReactElement {
     .with('light', () => webLightTheme)
     .exhaustive();
 
-  const windowProps = windowControls(preferences.closeBehavior);
+  const windowProps = windowControls(useAppVersion(), preferences.closeBehavior);
 
   return (
     <FluentProvider theme={fluentTheme}>
