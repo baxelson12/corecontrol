@@ -5,7 +5,37 @@ CoreControl, a Tauri desktop app, on top.
 
 ![CoreControl main window](docs/screenshot.png)
 
-## Layout
+## What it does
+
+CoreControl detects the cooler, shows live fan speeds and duties for every
+channel, lets you set a per-channel fan curve, and keeps running in the
+background. It persists the saved profile and restores it if the device
+drifts, for example after a firmware reset or another tool touching it.
+
+## Supported coolers
+
+- **MEG Coreliquid S280** — confirmed working
+- **MEG Coreliquid S360** — product ID confirmed, channel mapping inferred (not verified on hardware)
+- **MPG Coreliquid K360** — product ID confirmed, channel mapping inferred (not verified on hardware)
+
+See [`lib/README.md`](lib/README.md) for exact USB IDs and channel counts.
+
+## Install
+
+Download the latest installer from
+[GitHub Releases](https://github.com/baxelson12/corecontrol/releases) and run
+it. The app is Windows-only.
+
+## Notable behavior
+
+- Runs in the system tray; launching the exe again reveals the running instance instead of starting a second one.
+- Optional run-at-startup, which launches minimized to the tray.
+- A background watchdog reapplies the saved profile if the cooler's running profile drifts (firmware reset, another tool), with a toast or OS notification.
+- Checks GitHub for a newer release on startup and announces it.
+
+## For developers
+
+### Layout
 
 ```
 Cargo.toml        workspace root
@@ -16,46 +46,18 @@ app/              CoreControl, the Tauri desktop app
 justfile          workspace tasks
 ```
 
-The app consumes the library through the `Cooler` facade. Startup device
-detection (`detect_cooler`), live status polling (`fan_status`, speeds and
-duties for the stat cards), and the fan curve profile (`apply_fan_profile`,
-confirmed by reading the running profile back with `read_fan_profile`)
-are wired end to end. The app owns the profile: the applied curves, the
-theme choice, and the settings-page preferences persist in `settings.json`
-under the per-user app config directory, and the saved profile is pushed
-back to the cooler on startup. A background watchdog re-checks the running
-profile every five minutes and pushes the saved profile back if the device
-has drifted (a firmware reset, another tool), even while the app sits in
-the tray; a restore shows a toast, or an OS notification while the window
-is hidden. Errors (detection failure, a rejected or unconfirmed profile
-write) surface as toasts, with a retry offered when the cooler never
-confirms a write.
+The app consumes the library through the `Cooler` facade; see
+[`lib/README.md`](lib/README.md) for the library API, or use it standalone
+as a Rust dependency.
 
-The gear button opens the settings page: theme (light, dark, or follow the
-system), the chart look (a color per channel, picked from preset swatches
-or a free color picker, and how strongly the other curves dim while one is
-focused), what the close button does, the profile watchdog, restore
-notifications, and the startup update check, which compares the newest
-GitHub release against the running version and announces a newer one.
-
-The app lives in the notification area: a tray icon with an
-Open/Settings/Exit menu is always present, and launching the exe with
-`--minimized` (what the run-at-startup entry does) starts it hidden in the
-tray. Run-at-startup is re-registered on every launch, so the entry follows
-the exe if an installer moves it; Task Manager's Startup apps page turns it
-off. Launching the exe a second time reveals the running
-instance instead of starting another one. The title bar minimize button
-hides the window to the tray (no taskbar entry); the close button exits the
-app by default, or hides to the tray when the settings page says so.
-
-## Prerequisites
+### Prerequisites
 
 - Rust (stable) and [`just`](https://github.com/casey/just)
 - [pnpm](https://pnpm.io) and Node for the frontend
 - The [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your OS
 - For Windows: the MSVC toolchain (native) or `cargo-xwin` (cross from Linux)
 
-## Common tasks
+### Common tasks
 
 ```
 just check          # fmt + clippy + test the library
@@ -67,7 +69,7 @@ just win-installer  # cross-build the NSIS installer from Linux (needs nsis)
 just patch          # bump the patch version, commit, and tag (minor/major too)
 ```
 
-## CI and releases
+### CI and releases
 
 GitHub Actions (`.github/workflows/`) runs the library and frontend checks
 on every push to `main` and on pull requests. Pushing a `v*` tag builds the
@@ -79,5 +81,3 @@ the app version everywhere it lives, commits, and creates the matching tag.
 The tag must match the app version or the workflow attaches the installers
 to the wrong release. Nothing is pushed; release with the printed
 `git push` command.
-
-See [`lib/README.md`](lib/README.md) for the library API and supported models.
